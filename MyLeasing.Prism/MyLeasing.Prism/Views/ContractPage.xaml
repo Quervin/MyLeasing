@@ -1,0 +1,82 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:prism="http://prismlibrary.com"
+             prism:ViewModelLocator.AutowireViewModel="True"
+             xmlns:i18n="clr-namespace:MyLeasing.Prism.Helpers"
+             x:Class="MyLeasing.Prism.Views.ContractPage"
+             BackgroundColor="{StaticResource colorBackgroud}"
+             Title="{Binding Title}">
+    <ScrollView>
+        <StackLayout
+            Padding="10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <Label
+                    Grid.Row="0"
+                    Grid.Column="0"
+                    FontAttributes="Bold"
+                    Text="{i18n:Translate Price}"/>
+                <Label
+                    Grid.Row="0"
+                    Grid.Column="1"
+                    Text="{Binding Contract.Price, StringFormat='{0:C2}'}"/>
+                <Label
+                    Grid.Row="1"
+                    Grid.Column="0"
+                    FontAttributes="Bold"
+                    Text="{i18n:Translate StartDate}"/>
+                <Label
+                    Grid.Row="1"
+                    Grid.Column="1"
+                    Text="{Binding Contract.StartDateLocal, StringFormat='{0:yyyy/MM/dd}'}"/>
+                <Label
+                    Grid.Row="2"
+                    Grid.Column="0"
+                    FontAttributes="Bold"
+                    Text="{i18n:Translate EndDate}"/>
+                <Label
+                    Grid.Row="2"
+                    Grid.Column="1"
+                    Text="{Binding Contract.EndDateLocal, StringFormat='{0:yyyy/MM/dd}'}"/>
+                <Label
+                    Grid.Row="3"
+                    Grid.Column="0"
+                    FontAttributes="Bold"
+                    Text="{i18n:Translate IsActive}"
+                    VerticalOptions="Center"/>
+                <CheckBox
+                    Grid.Row="3"
+                    Grid.Column="1"
+                    IsChecked="{Binding Contract.IsActive}"/>
+                <Label
+                    Grid.Row="4"
+                    Grid.Column="0"
+                    FontAttributes="Bold"
+                    Text="{i18n:Translate Remarks}"/>
+                <Label
+                    Grid.Row="4"
+                    Grid.Column="1"
+                    Text="{Binding Contract.Remarks}"/>
+            </Grid>
+        </StackLayout>
+    </ScrollView>
+    
+</ContentPage>

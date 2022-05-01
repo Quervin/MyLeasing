@@ -1,0 +1,121 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:prism="http://prismlibrary.com"
+             xmlns:ffimageloading="clr-namespace:FFImageLoading.Forms;assembly=FFImageLoading.Forms"
+             xmlns:i18n="clr-namespace:MyLeasing.Prism.Helpers"
+             prism:ViewModelLocator.AutowireViewModel="True"
+             x:Class="MyLeasing.Prism.Views.PropertiesPage"
+             BackgroundColor="{StaticResource colorBackgroud}"
+             Title="{Binding Title}">
+    
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Icon="ic_action_add_circle" Command="{Binding AddPropertyCommand}"/>
+    </ContentPage.ToolbarItems>
+
+    <StackLayout
+        Padding="10">
+        <ListView
+            BackgroundColor="Transparent"
+            HasUnevenRows="True"
+            ItemsSource="{Binding Properties}"
+            SeparatorVisibility="None">
+            <ListView.ItemTemplate>
+                <DataTemplate>
+                    <ViewCell>
+                        <Frame
+                            CornerRadius="10"
+                            Margin="0,0,0,10">
+                            <Frame.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding SelectPropertyCommand}"/>
+                            </Frame.GestureRecognizers>
+                            <StackLayout>
+                                <ffimageloading:CachedImage
+                                        Aspect="AspectFit"
+                                        CacheDuration= "50"
+                                        DownsampleToViewSize = "true"
+                                        ErrorPlaceholder= "ErrorImage"
+                                        HeightRequest="200"
+                                        LoadingPlaceholder= "LoaderImage"
+                                        RetryCount= "3"
+                                        RetryDelay= "600"
+                                        Source="{Binding FirstImage}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid
+                                Grid.Column="0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+                                        <Label
+                                    Grid.Row="0"
+                                    Grid.Column="0"
+                                    FontAttributes="Bold"
+                                    Text="{i18n:Translate Neighborhood}"/>
+                                        <Label
+                                    Grid.Row="0"
+                                    Grid.Column="1"
+                                    Text="{Binding Neighborhood}"/>
+                                        <Label
+                                    Grid.Row="1"
+                                    Grid.Column="0"
+                                    FontAttributes="Bold"
+                                    Text="{i18n:Translate Address}"/>
+                                        <Label
+                                    Grid.Row="1"
+                                    Grid.Column="1"
+                                    Text="{Binding Address}"/>
+                                        <Label
+                                    Grid.Row="2"
+                                    Grid.Column="0"
+                                    FontAttributes="Bold"
+                                    Text="{i18n:Translate Price}"/>
+                                        <Label
+                                    Grid.Row="2"
+                                    Grid.Column="1"
+                                    Text="{Binding Price, StringFormat='{0:C2}'}"/>
+                                        <Label
+                                    Grid.Row="3"
+                                    Grid.Column="0"
+                                    FontAttributes="Bold"
+                                    Text="{i18n:Translate PropertyType}"/>
+                                        <Label
+                                    Grid.Row="3"
+                                    Grid.Column="1"
+                                    Text="{Binding PropertyType}"/>
+                                        <Label
+                                    Grid.Row="4"
+                                    Grid.Column="0"
+                                    FontAttributes="Bold"
+                                    Text="{i18n:Translate IsAvailable}"
+                                    VerticalOptions="Center"/>
+                                        <CheckBox
+                                    Grid.Row="4"
+                                    Grid.Column="1"
+                                    HorizontalOptions="Start"
+                                    IsEnabled="False"
+                                    IsChecked="{Binding IsAvailable}"/>
+                                    </Grid>
+                                    <Image
+                                Grid.Column="1"
+                                Source="ic_more_vert"/>
+                                </Grid>
+                            </StackLayout>
+                        </Frame>
+                    </ViewCell>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+        </ListView>
+    </StackLayout>
+</ContentPage>

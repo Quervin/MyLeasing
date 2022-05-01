@@ -1,32 +1,46 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
-<Application xmlns="http://xamarin.com/schemas/2014/forms"
+<prism:PrismApplication xmlns="http://xamarin.com/schemas/2014/forms"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:prism="clr-namespace:Prism.DryIoc;assembly=Prism.DryIoc.Forms"
              x:Class="MyLeasing.Prism.App">
-    <!--
-        Define global resources and styles here, that apply to all pages in your app.
-    -->
-    <Application.Resources>
+	<Application.Resources>
+
+		<!-- Application resource dictionary -->
         <ResourceDictionary>
-            <Color x:Key="Primary">#2196F3</Color>
+
+            <!-- Parameters -->
+            <x:String x:Key="UrlAPI">https://myleasinghidalgo.azurewebsites.net/</x:String>
+
+            <!-- Colors -->
+            <Color x:Key="colorBackgroud">#F6F1EB</Color>
+            <Color x:Key="colorPrimary">#BFB2AA</Color>
+            <Color x:Key="colorSecondary">#0D0D0D</Color>
+            <Color x:Key="colorDanger">#F24162</Color>
+            <Color x:Key="colorAccent">#BF4904</Color>
+            <Color x:Key="colorFont">#000000</Color>
+            <Color x:Key="colorFontInverse">#F6F1EB</Color>
+
+            <!-- Styles -->
             <Style TargetType="Button">
-                <Setter Property="TextColor" Value="White"></Setter>
-                <Setter Property="VisualStateManager.VisualStateGroups">
-                    <VisualStateGroupList>
-                        <VisualStateGroup x:Name="CommonStates">
-                            <VisualState x:Name="Normal">
-                                <VisualState.Setters>
-                                    <Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
-                                </VisualState.Setters>
-                            </VisualState>
-                            <VisualState x:Name="Disabled">
-                                <VisualState.Setters>
-                                    <Setter Property="BackgroundColor" Value="#332196F3" />
-                                </VisualState.Setters>
-                            </VisualState>
-                        </VisualStateGroup>
-                    </VisualStateGroupList>
-                </Setter>
+                <Setter Property="BackgroundColor" Value="{StaticResource colorPrimary}" />
+                <Setter Property="HorizontalOptions" Value="FillAndExpand" />
+                <Setter Property="TextColor" Value="{StaticResource colorFontInverse}" />
             </Style>
-        </ResourceDictionary>        
+
+            <Style x:Key="secondaryButton" TargetType="Button">
+                <Setter Property="BackgroundColor" Value="{StaticResource colorSecondary}" />
+            </Style>
+
+            <Style x:Key="dangerButton" TargetType="Button">
+                <Setter Property="BackgroundColor" Value="{StaticResource colorDanger}" />
+            </Style>
+
+            <Style TargetType="Label">
+                <Setter Property="TextColor" Value="{StaticResource colorFont}" />
+            </Style>
+
+
+        </ResourceDictionary>
+        
     </Application.Resources>
-</Application>
+</prism:PrismApplication>

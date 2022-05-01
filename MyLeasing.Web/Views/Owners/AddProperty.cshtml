@@ -1,0 +1,25 @@
+﻿@model MyLeasing.Web.Models.PropertyViewModel
+
+@{
+    ViewData["Title"] = "Create";
+}
+
+<h2>Create</h2>
+
+<h4>Property</h4>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="AddProperty">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <input type="hidden" asp-for="OwnerId" />
+
+            <partial name="_Property" />
+
+            <div class="form-group">
+                <input type="submit" value="Create" class="btn btn-primary" />
+                <a asp-action="Details" asp-route-id="@Model.OwnerId" class="btn btn-success">Back to Owner</a>
+            </div>
+        </form>
+    </div>
+</div>

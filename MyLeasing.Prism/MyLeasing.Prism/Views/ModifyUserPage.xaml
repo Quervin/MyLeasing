@@ -1,0 +1,113 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:busyindicator="clr-namespace:Syncfusion.SfBusyIndicator.XForms;assembly=Syncfusion.SfBusyIndicator.XForms"
+             xmlns:i18n="clr-namespace:MyLeasing.Prism.Helpers"
+             xmlns:prism="http://prismlibrary.com"
+             prism:ViewModelLocator.AutowireViewModel="True"
+             x:Class="MyLeasing.Prism.Views.ModifyUserPage"
+             BackgroundColor="{StaticResource colorBackgroud}"
+         	 Title="{Binding Title}">
+
+    <ScrollView>
+        <AbsoluteLayout>
+            <StackLayout 
+                AbsoluteLayout.LayoutBounds="0,0,1,1"
+                AbsoluteLayout.LayoutFlags="All"
+        	    Padding="10">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Label
+                	    Grid.Row="0"
+                	    Grid.Column="0"
+                	    Text="{i18n:Translate Document}"
+                	    VerticalOptions="Center"/>
+                    <Entry
+                	    Grid.Row="0"
+                	    Grid.Column="1"
+                	    Placeholder="{i18n:Translate DocumentPlaceHolder}"
+                	    Text="{Binding Owner.Document}"/>
+
+                    <Label
+                	    Grid.Row="1"
+                	    Grid.Column="0"
+                	    Text="{i18n:Translate Firstname}"
+                	    VerticalOptions="Center"/>
+                    <Entry
+                	    Grid.Row="1"
+                	    Grid.Column="1"
+                	    Placeholder="{i18n:Translate FirstnamePlaceHolder}"
+                	    Text="{Binding Owner.FirstName}"/>
+
+                    <Label
+                	    Grid.Row="2"
+                	    Grid.Column="0"
+                	    Text="{i18n:Translate Lastname}"
+                	    VerticalOptions="Center"/>
+                    <Entry
+                	    Grid.Row="2"
+                	    Grid.Column="1"
+                	    Placeholder="{i18n:Translate LastnamePlaceHolder}"
+                	    Text="{Binding Owner.LastName}"/>
+
+                    <Label
+                	    Grid.Row="3"
+                	    Grid.Column="0"
+                	    Text="{i18n:Translate Address}"
+                	    VerticalOptions="Center"/>
+                    <Entry
+                	    Grid.Row="3"
+                	    Grid.Column="1"
+                	    Placeholder="{i18n:Translate AddressPlaceHolder}"
+                	    Text="{Binding Owner.Address}"/>
+
+                    <Label
+                	    Grid.Row="4"
+                	    Grid.Column="0"
+                	    Text="{i18n:Translate Phone}"
+                	    VerticalOptions="Center"/>
+                    <Entry
+                	    Grid.Row="4"
+                	    Grid.Column="1"
+                        Keyboard="Telephone"
+                	    Placeholder="{i18n:Translate PhonePlaceHolder}"
+                	    Text="{Binding Owner.PhoneNumber}"/>
+                </Grid>
+
+                <StackLayout
+            	    Orientation="Horizontal"
+                    VerticalOptions="EndAndExpand">
+                    <Button
+                	    Command="{Binding SaveCommand}"
+                	    HorizontalOptions="FillAndExpand"
+                	    IsEnabled="{Binding IsEnabled}"
+                	    Text="{i18n:Translate Save}"/>
+
+                    <Button
+                	    Command="{Binding ChangePasswordCommand}"
+                	    HorizontalOptions="FillAndExpand"
+                	    IsEnabled="{Binding IsEnabled}"
+                	    Style="{StaticResource secondaryButton}"
+                	    Text="{i18n:Translate ChangePassword}"/>
+                </StackLayout>
+            </StackLayout>
+            <busyindicator:SfBusyIndicator  
+                AnimationType="Gear"
+                AbsoluteLayout.LayoutBounds=".5,.5,.5,.5"
+                AbsoluteLayout.LayoutFlags="All"
+                BackgroundColor="{StaticResource colorDanger}"
+                HorizontalOptions="Center"
+                TextColor="{StaticResource colorFontInverse}"
+                IsVisible="{Binding IsRunning}"
+                Title="{i18n:Translate Saving}"
+                VerticalOptions="Center"
+                ViewBoxWidth="80"
+                ViewBoxHeight="80" />
+        </AbsoluteLayout>
+    </ScrollView>
+    
+</ContentPage>
