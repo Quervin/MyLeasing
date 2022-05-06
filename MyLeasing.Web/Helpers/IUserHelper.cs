@@ -1,5 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity;
+using MyLeasing.Common.Models;
 using MyLeasing.Web.Data.Entities;
 using MyLeasing.Web.Models;
 
@@ -40,5 +41,9 @@ namespace MyLeasing.Web.Helpers
         Task<string> GeneratePasswordResetTokenAsync(User user);
 
         Task<IdentityResult> ResetPasswordAsync(User user, string token, string password);
+
+
+        //Metodos para Angular
+        Task<User> AddUserWeb(AddUserRequest view, string role);
     }
 }

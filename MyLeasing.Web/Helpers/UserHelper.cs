@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using MyLeasing.Common.Models;
 using MyLeasing.Web.Data.Entities;
 using MyLeasing.Web.Models;
 using System.Threading.Tasks;
@@ -145,5 +146,32 @@ namespace MyLeasing.Web.Helpers
         {
             return await _userManager.ResetPasswordAsync(user, token, password);
         }
+
+
+        //Métodos para Angular
+        public async Task<User> AddUserWeb(AddUserRequest view, string role)
+        {
+            var user = new User
+            {
+                Address = view.Address,
+                Document = view.Document,
+                Email = view.Email,
+                FirstName = view.FirstName,
+                LastName = view.LastName,
+                PhoneNumber = view.Phone,
+                UserName = view.Email
+            };
+
+            var result = await AddUserAsync(user, view.Password);
+            if (result != IdentityResult.Success)
+            {
+                return null;
+            }
+
+            var newUser = await GetUserByEmailAsync(view.Email);
+            await AddUserToRoleAsync(newUser, role);
+            return newUser;
+        }
+
     }
 }
