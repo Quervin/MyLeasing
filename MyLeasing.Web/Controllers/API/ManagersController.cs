@@ -6,6 +6,7 @@ using MyLeasing.Common.Models;
 using MyLeasing.Web.Data;
 using MyLeasing.Web.Data.Entities;
 using MyLeasing.Web.Helpers;
+using MyLeasing.Web.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -34,19 +35,32 @@ namespace MyLeasing.Web.Controllers.API
 
         //Métodos para Angular
         [HttpGet]
-        [Route("GetManagersWeb")]
-        public async Task<IActionResult> GetManagerList()
+        [Route("GetManagersWeb/{index}/{countPages}")]
+        public async Task<IActionResult> GetManager(int index, int countPages)
         {
             try
             {
+                var total = await _dataContext.Managers.CountAsync();
+
                 var managers = await _dataContext.Managers
-                    .Include(m => m.User).ToListAsync();
+                    .Include(m => m.User).Select(x => new ManagerResponseApi()
+                    {
+                        Id = x.Id,
+                        User = new UserResponseApi()
+                        {
+                            Address = x.User.Address,
+                            Document = x.User.Document,
+                            FirstName = x.User.FirstName,
+                            LastName = x.User.LastName
+                        }
+                    }).Skip(index).Take(countPages).ToListAsync();
 
                 return Ok(new Response<object>
                 {
                     IsSuccess = true,
-                    Message = "Listado de las propiedades.",
-                    Result = managers
+                    Message = "Listado de las managers.",
+                    Result = managers,
+                    Total = total
                 });
             }
             catch (Exception ex)
@@ -66,8 +80,17 @@ namespace MyLeasing.Web.Controllers.API
             try
             {
                 var manager = await _dataContext.Managers
-                .Include(o => o.User)
-                .FirstOrDefaultAsync(o => o.Id == managerId);
+                .Include(o => o.User).Select(x => new ManagerResponseApi()
+                {
+                    Id = x.Id,
+                    User = new UserResponseApi()
+                    {
+                        Address = x.User.Address,
+                        Document = x.User.Document,
+                        FirstName = x.User.FirstName,
+                        LastName = x.User.LastName
+                    }
+                }).FirstOrDefaultAsync(o => o.Id == managerId);
 
                 if (manager == null)
                 {

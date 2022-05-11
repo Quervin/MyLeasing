@@ -6,6 +6,8 @@
 
         public string Message { get; set; }
 
+        public int Total { get; set; }
+
         public T Result { get; set; }
     }
 }

@@ -6,6 +6,7 @@ using MyLeasing.Common.Models;
 using MyLeasing.Web.Data;
 using MyLeasing.Web.Data.Entities;
 using MyLeasing.Web.Helpers;
+using MyLeasing.Web.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -42,20 +43,34 @@ namespace MyLeasing.Web.Controllers.API
 
         //Métodos para Angular
         [HttpGet]
-        [Route("GetLesseesListWeb")]
-        public async Task<IActionResult> GetLesseesList()
+        [Route("GetLesseesWeb/{index}/{countPages}")]
+        public async Task<IActionResult> GetLessees(int index, int countPages)
         {
             try
             {
-                var managers = await _dataContext.Lessees
+                var total = await _dataContext.Lessees.CountAsync();
+
+                var lessees = await _dataContext.Lessees
                     .Include(o => o.User)
-                    .Include(o => o.Contracts).ToListAsync();
+                    .Include(o => o.Contracts).Select(x => new LesseeResponseApi()
+                    {
+                        Id = x.Id,
+                        User = new UserResponseApi()
+                        {
+                            Address = x.User.Address,
+                            Document = x.User.Document,
+                            FirstName = x.User.FirstName,
+                            LastName = x.User.LastName
+                        },
+                        Contracts = x.Contracts != null ? toContactsResponseApi(x.Contracts) : new List<ContractResponseApi>()
+                    }).Skip(index).Take(countPages).ToListAsync();
 
                 return Ok(new Response<object>
                 {
                     IsSuccess = true,
-                    Message = "Listado de los lesse.",
-                    Result = managers
+                    Message = "Listado de los lessees.",
+                    Result = lessees,
+                    Total = total
                 });
             }
             catch (Exception ex)
@@ -69,29 +84,39 @@ namespace MyLeasing.Web.Controllers.API
         }
 
         [HttpGet]
-        [Route("DetailsLesseWeb/{lesseId}")]
-        public async Task<IActionResult> DetailsLesse(int lesseId)
+        [Route("DetailsLesseeWeb/{lesseeId}")]
+        public async Task<IActionResult> DetailsLessee(int lesseeId)
         {
             try
             {
                 var lessee = await _dataContext.Lessees
                .Include(l => l.User)
-               .Include(l => l.Contracts)
-               .FirstOrDefaultAsync(m => m.Id == lesseId);
+               .Include(l => l.Contracts).Select(x => new LesseeResponseApi()
+               {
+                   Id = x.Id,
+                   User = new UserResponseApi()
+                   {
+                       Address = x.User.Address,
+                       Document = x.User.Document,
+                       FirstName = x.User.FirstName,
+                       LastName = x.User.LastName
+                   },
+                   Contracts = x.Contracts != null ? toContactsResponseApi(x.Contracts) : new List<ContractResponseApi>()
+               }).FirstOrDefaultAsync(m => m.Id == lesseeId);
 
                 if (lessee == null)
                 {
                     return Ok(new Response<object>
                     {
                         IsSuccess = false,
-                        Message = "Se ha producido un error al cargar la información del lesse."
+                        Message = "Se ha producido un error al cargar la información del lessee."
                     });
                 }
 
                 return Ok(new Response<object>
                 {
                     IsSuccess = true,
-                    Message = "Información del lesse.",
+                    Message = "Información del lessee.",
                     Result = lessee
                 });
             }
@@ -100,7 +125,7 @@ namespace MyLeasing.Web.Controllers.API
                 return Ok(new Response<object>
                 {
                     IsSuccess = false,
-                    Message = "Se ha producido un error al cargar la información del lesse." + ex.Message
+                    Message = "Se ha producido un error al cargar la información del lessee." + ex.Message
                 });
             }
         }
@@ -228,9 +253,9 @@ namespace MyLeasing.Web.Controllers.API
         {
             try
             {
-               var lessee = await _dataContext.Lessees
-              .Include(o => o.User)
-              .FirstOrDefaultAsync(m => m.Id == lesseId);
+                var lessee = await _dataContext.Lessees
+               .Include(o => o.User)
+               .FirstOrDefaultAsync(m => m.Id == lesseId);
 
                 if (lessee == null)
                 {
@@ -413,6 +438,41 @@ namespace MyLeasing.Web.Controllers.API
                     Message = "Se produjo un error al intentar actualizar el contrato." + ex.Message
                 });
             }
+        }
+
+        private List<ContractResponseApi> toContactsResponseApi(ICollection<Contract> contracts)
+        {
+            return contracts.Select(x => new ContractResponseApi()
+            {
+                Id = x.Id,
+                EndDate = x.EndDate,
+                IsActive = x.IsActive,
+                StartDate = x.StartDate,
+                Remarks = x.Remarks,
+                Price = x.Price,
+                Owner = x.Owner != null ? new OwnerResponseApi()
+                {
+                    Id = x.Owner.Id,
+                    User = new UserResponseApi()
+                    {
+                        Document = x.Owner.User.Document,
+                        Address = x.Owner.User.Address,
+                        FirstName = x.Owner.User.FirstName,
+                        LastName = x.Owner.User.LastName
+                    }
+                } : new OwnerResponseApi(),
+                Lessee = x.Lessee != null ? new LesseeResponseApi()
+                {
+                    Id = x.Lessee.Id,
+                    User = new UserResponseApi()
+                    {
+                        Document = x.Owner.User.Document,
+                        Address = x.Owner.User.Address,
+                        FirstName = x.Owner.User.FirstName,
+                        LastName = x.Owner.User.LastName
+                    }
+                } : new LesseeResponseApi()
+            }).ToList();
         }
     }
 }

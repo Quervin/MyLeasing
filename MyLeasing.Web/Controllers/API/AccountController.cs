@@ -265,7 +265,7 @@ namespace MyLeasing.Web.Controllers.API
 
         [HttpPost]
         [Route("RegisterWeb")]
-        public async Task<IActionResult> Register(AddUserRequest request)
+        public async Task<IActionResult> RegisterUser(AddUserRequest request)
         {
             try
             {
