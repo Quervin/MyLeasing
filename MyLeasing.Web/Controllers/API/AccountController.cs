@@ -274,7 +274,7 @@ namespace MyLeasing.Web.Controllers.API
 
         [HttpPost]
         [Route("CreateTokenWeb")]
-        public async Task<IActionResult> CreateToken([FromBody] LoginViewModel model)
+        public async Task<IActionResult> CreateToken(LoginViewModel model)
         {
             if (ModelState.IsValid)
             {
@@ -303,12 +303,17 @@ namespace MyLeasing.Web.Controllers.API
                                 claims,
                                 expires: DateTime.UtcNow.AddMonths(6),
                                 signingCredentials: credentials);
+
+                            var ListRol = await _userHelper.GetRolByEmailAsync(user);
+
                             var results = new TokenResponse
                             {
                                 Token = new JwtSecurityTokenHandler().WriteToken(token),
                                 //Expiration = token.ValidTo,
                                 //Expiration = DateTime.Now.AddMinutes(1),
                                 Expiration = DateTime.Now.AddHours(1),
+                                UserId = user.Id,
+                                RolId = ListRol[0],
                                 IsSuccess = true 
                             };
 
@@ -420,7 +425,107 @@ namespace MyLeasing.Web.Controllers.API
         }
 
         [HttpPost]
+        [Route("RecoverPasswordWeb")]
+        public async Task<IActionResult> RecoverUserPassword(EmailRequest request)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return Ok(new Response<object>
+                    {
+                        IsSuccess = false,
+                        Message = "Se produjo un error al intentar recuperar la contraseña."
+                    });
+                }
+
+                var user = await _userHelper.GetUserByEmailAsync(request.Email);
+                if (user == null)
+                {
+                    return Ok(new Response<object>
+                    {
+                        IsSuccess = false,
+                        Message = "Este correo electrónico no esta asignado a ningún usuario."
+                    });
+                }
+
+                var myToken = await _userHelper.GeneratePasswordResetTokenAsync(user);
+                var link = Url.Action("ResetPassword", "Account", new { token = myToken }, protocol: HttpContext.Request.Scheme);
+                _mailHelper.SendMail(request.Email, "Restablecer Contraseña", $"<h1>Recuperra Contraseña</h1>" +
+                    $"Para restablecer la contraseña por favor presionar el siguiente link:</br></br>" +
+                    $"<a href = \"{link}\">Restablecer Contraseña</a>");
+
+                return Ok(new Response<object>
+                {
+                    IsSuccess = true,
+                    Message = "Un correo con las intrucciones para cambiar la contraseña ha sido enviado."
+                });
+            }
+            catch (Exception ex)
+            {
+                return Ok(new Response<object>
+                {
+                    IsSuccess = false,
+                    Message = "Se produjo un error al intentar recuperar la contraseña." + ex.Message
+                });
+            }
+        }
+
+
+        [HttpPost]
+        [Route("GetUserWeb")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<IActionResult> GetUser(UserRequestApi request)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return Ok(new Response<object>
+                    {
+                        IsSuccess = false,
+                        Message = "Se ha producido un error al obtener el usuario."
+                    });
+                }
+
+                var user = await _userHelper.GetUserByIdAsync(request.UserId);
+                if (user != null)
+                {
+                    return Ok(new Response<object>
+                    {
+                        IsSuccess = false,
+                        Message = "Usuario no encontrado."
+                    });
+                }
+
+                var model = new UserResponseApi
+                {
+                    Address = user.Address,
+                    Document = user.Document,
+                    FirstName = user.FirstName,
+                    LastName = user.LastName
+                };
+
+                return Ok(new Response<object>
+                {
+                    IsSuccess = true,
+                    Message = "El usuario ha sido actualizado.",
+                    Result = model
+                });
+            }
+            catch (Exception ex)
+            {
+                return Ok(new Response<object>
+                {
+                    IsSuccess = false,
+                    Message = "Se ha producido un error al editar el usuario." + ex.Message
+                });
+            }
+        }
+
+        [HttpPost]
         [Route("ChangeUserWeb")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<IActionResult> ChangeUser(EditUserRequest request)
         {
             try
@@ -464,53 +569,6 @@ namespace MyLeasing.Web.Controllers.API
                 {
                     IsSuccess = false,
                     Message = "Se ha producido un error al editar el usuario." + ex.Message
-                });
-            }
-        }
-
-        [HttpPost]
-        [Route("RecoverPasswordWeb")]
-        public async Task<IActionResult> RecoverUserPassword(EmailRequest request)
-        {
-            try
-            {
-                if (!ModelState.IsValid)
-                {
-                    return Ok(new Response<object>
-                    {
-                        IsSuccess = false,
-                        Message = "Se produjo un error al intentar recuperar la contraseña."
-                    });
-                }
-
-                var user = await _userHelper.GetUserByEmailAsync(request.Email);
-                if (user == null)
-                {
-                    return Ok(new Response<object>
-                    {
-                        IsSuccess = false,
-                        Message = "Este correo electrónico no esta asignado a ningún usuario."
-                    });
-                }
-
-                var myToken = await _userHelper.GeneratePasswordResetTokenAsync(user);
-                var link = Url.Action("ResetPassword", "Account", new { token = myToken }, protocol: HttpContext.Request.Scheme);
-                _mailHelper.SendMail(request.Email, "Restablecer Contraseña", $"<h1>Recuperra Contraseña</h1>" +
-                    $"Para restablecer la contraseña por favor presionar el siguiente link:</br></br>" +
-                    $"<a href = \"{link}\">Restablecer Contraseña</a>");
-
-                return Ok(new Response<object>
-                {
-                    IsSuccess = true,
-                    Message = "Un correo con las intrucciones para cambiar la contraseña ha sido enviado."
-                });
-            }
-            catch (Exception ex)
-            {
-                return Ok(new Response<object>
-                {
-                    IsSuccess = false,
-                    Message = "Se produjo un error al intentar recuperar la contraseña." + ex.Message
                 });
             }
         }

@@ -2,6 +2,7 @@
 using MyLeasing.Common.Models;
 using MyLeasing.Web.Data.Entities;
 using MyLeasing.Web.Models;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace MyLeasing.Web.Helpers
@@ -135,6 +136,11 @@ namespace MyLeasing.Web.Helpers
         public async Task<User> GetUserByIdAsync(string userId)
         {
             return await _userManager.FindByIdAsync(userId);
+        }
+
+        public async Task<IList<string>> GetRolByEmailAsync(User user)
+        {
+            return await _userManager.GetRolesAsync(user);
         }
 
         public async Task<string> GeneratePasswordResetTokenAsync(User user)

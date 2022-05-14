@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity;
 using MyLeasing.Common.Models;
 using MyLeasing.Web.Data.Entities;
@@ -45,5 +46,6 @@ namespace MyLeasing.Web.Helpers
 
         //Metodos para Angular
         Task<User> AddUserWeb(AddUserRequest view, string role);
+        Task<IList<string>> GetRolByEmailAsync(User user);
     }
 }
