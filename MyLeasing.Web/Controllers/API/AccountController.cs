@@ -8,8 +8,14 @@ using MyLeasing.Web.Data.Entities;
 using MyLeasing.Web.Helpers;
 using System;
 using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Security.Claims;
+using System.Text;
+using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
+using MyLeasing.Web.Models;
 
 namespace MyLeasing.Web.Controllers.API
 {
@@ -20,15 +26,18 @@ namespace MyLeasing.Web.Controllers.API
         private readonly DataContext _dataContext;
         private readonly IUserHelper _userHelper;
         private readonly IMailHelper _mailHelper;
+        private readonly IConfiguration _configuration;
 
         public AccountController(
             DataContext dataContext,
             IUserHelper userHelper,
+            IConfiguration configuration,
             IMailHelper mailHelper)
         {
             _dataContext = dataContext;
             _userHelper = userHelper;
             _mailHelper = mailHelper;
+             _configuration = configuration;
         }
 
         [HttpPost]
@@ -262,6 +271,67 @@ namespace MyLeasing.Web.Controllers.API
         }
 
         //Métodos para Angular
+
+        [HttpPost]
+        [Route("CreateTokenWeb")]
+        public async Task<IActionResult> CreateToken([FromBody] LoginViewModel model)
+        {
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    var user = await _userHelper.GetUserByEmailAsync(model.Username);
+                    if (user != null)
+                    {
+                        var result = await _userHelper.ValidatePasswordAsync(
+                            user,
+                            model.Password);
+
+                        if (result.Succeeded)
+                        {
+                            var claims = new[]
+                            {
+                            new Claim(JwtRegisteredClaimNames.Sub, user.Email),
+                            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+                        };
+
+                            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Tokens:Key"]));
+                            var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+                            var token = new JwtSecurityToken(
+                                _configuration["Tokens:Issuer"],
+                                _configuration["Tokens:Audience"],
+                                claims,
+                                expires: DateTime.UtcNow.AddMonths(6),
+                                signingCredentials: credentials);
+                            var results = new TokenResponse
+                            {
+                                Token = new JwtSecurityTokenHandler().WriteToken(token),
+                                //Expiration = token.ValidTo,
+                                //Expiration = DateTime.Now.AddMinutes(1),
+                                Expiration = DateTime.Now.AddHours(1),
+                                IsSuccess = true 
+                            };
+
+                            return Ok(results);
+                        }
+                    }
+                }
+                catch (Exception ex )
+                {
+                    return Ok(new TokenResponse
+                    {
+                        IsSuccess = false,
+                        Token = string.Empty
+                    });
+                }
+            }
+
+            return Ok(new TokenResponse
+            {
+                IsSuccess = false,
+                Token = string.Empty
+            });
+        }
 
         [HttpPost]
         [Route("RegisterWeb")]
