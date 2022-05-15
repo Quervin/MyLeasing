@@ -60,7 +60,9 @@ namespace MyLeasing.Web.Controllers.API
                             Address = x.User.Address,
                             Document = x.User.Document,
                             FirstName = x.User.FirstName,
-                            LastName = x.User.LastName
+                            LastName = x.User.LastName,
+                            Email = x.User.Email,
+                            Phone = x.User.PhoneNumber
                         },
                         Contracts = x.Contracts != null ? toContactsResponseApi(x.Contracts) : new List<ContractResponseApi>()
                     }).Skip(index).Take(countPages).ToListAsync();

@@ -489,7 +489,7 @@ namespace MyLeasing.Web.Controllers.API
                 }
 
                 var user = await _userHelper.GetUserByIdAsync(request.UserId);
-                if (user != null)
+                if (user == null)
                 {
                     return Ok(new Response<object>
                     {
@@ -503,13 +503,15 @@ namespace MyLeasing.Web.Controllers.API
                     Address = user.Address,
                     Document = user.Document,
                     FirstName = user.FirstName,
-                    LastName = user.LastName
+                    LastName = user.LastName,
+                    Phone = user.PhoneNumber,
+                    Email = user.Email
                 };
 
                 return Ok(new Response<object>
                 {
                     IsSuccess = true,
-                    Message = "El usuario ha sido actualizado.",
+                    Message = "Se ha obtenido el usuario.",
                     Result = model
                 });
             }
@@ -526,7 +528,7 @@ namespace MyLeasing.Web.Controllers.API
         [HttpPost]
         [Route("ChangeUserWeb")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
-        public async Task<IActionResult> ChangeUser(EditUserRequest request)
+        public async Task<IActionResult> ChangeUser(EditUserRequestApi request)
         {
             try
             {
@@ -540,7 +542,7 @@ namespace MyLeasing.Web.Controllers.API
                 }
 
                 var user = await _userHelper.GetUserByEmailAsync(request.Email);
-                if (user != null)
+                if (user == null)
                 {
                     return Ok(new Response<object>
                     {
@@ -556,6 +558,16 @@ namespace MyLeasing.Web.Controllers.API
                 user.PhoneNumber = request.Phone;
 
                 await _userHelper.UpdateUserAsync(user);
+
+                var result = await _userHelper.ChangePasswordAsync(user, request.OldPassword, request.NewPassword);
+                if (!result.Succeeded)
+                {
+                    return Ok(new Response<object>
+                    {
+                        IsSuccess = false,
+                        Message = result.Errors.FirstOrDefault().Description
+                    });
+                }
 
                 return Ok(new Response<object>
                 {

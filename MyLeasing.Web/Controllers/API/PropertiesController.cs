@@ -252,6 +252,103 @@ namespace MyLeasing.Web.Controllers.API
 
         //Métodos para Angular
         [HttpGet]
+        [Route("GetListPropertiesWeb/{index}/{countPages}")]
+        public async Task<IActionResult> GetListProperties(int index, int countPages)
+        {
+            try
+            {
+                var total = await _dataContext.Properties.CountAsync();
+
+                var properties = await _dataContext.Properties
+                .Include(p => p.PropertyType)
+                .Include(p => p.PropertyImages).Select(x => new PropertyResponseApi()
+                {
+                    Id = x.Id,
+                    Neighborhood = x.Neighborhood,
+                    Address = x.Address,
+                    Price = x.Price,
+                    SquareMeters = x.SquareMeters,
+                    Rooms = x.Rooms,
+                    Stratum = x.Stratum,
+                    HasParkingLot = x.HasParkingLot,
+                    IsAvailable = x.IsAvailable,
+                    Remarks = x.Remarks,
+                    Latitude = x.Latitude,
+                    Longitude = x.Longitude,
+                    PropertyType = x.PropertyType != null ? new PropertyTypeResponseApi()
+                    {
+                        Id = x.PropertyType.Id,
+                        Name = x.PropertyType.Name
+                    } : new PropertyTypeResponseApi(),
+                    PropertyImages = x.PropertyImages != null ? toPropertyImageResponseApi(x.PropertyImages) : new List<PropertyImageResponseApi>(),
+                }).Where(p => p.IsAvailable).Skip(index).Take(countPages).ToListAsync();
+
+                return Ok(new Response<object>
+                {
+                    IsSuccess = true,
+                    Message = "Listado de las propiedades.",
+                    Result = properties,
+                    Total = total
+                });
+            }
+            catch (Exception ex)
+            {
+                return Ok(new Response<object>
+                {
+                    IsSuccess = false,
+                    Message = "Se ha producido un error al intentar obtener el listado de las propiedades." + ex.Message
+                });
+            }
+        }
+
+        [HttpGet]
+        [Route("GetPropertyWeb/{propertyId}")]
+        public async Task<IActionResult> GetProperty(int propertyId)
+        {
+            try
+            {
+                var property = await _dataContext.Properties
+                .Include(o => o.PropertyType)
+                .Include(p => p.PropertyImages).Select(x => new PropertyResponseApi()
+                {
+                    Id = x.Id,
+                    Neighborhood = x.Neighborhood,
+                    Address = x.Address,
+                    Price = x.Price,
+                    SquareMeters = x.SquareMeters,
+                    Rooms = x.Rooms,
+                    Stratum = x.Stratum,
+                    HasParkingLot = x.HasParkingLot,
+                    IsAvailable = x.IsAvailable,
+                    Remarks = x.Remarks,
+                    Latitude = x.Latitude,
+                    Longitude = x.Longitude,
+                    PropertyType = x.PropertyType != null ? new PropertyTypeResponseApi()
+                    {
+                        Id = x.PropertyType.Id,
+                        Name = x.PropertyType.Name
+                    } : new PropertyTypeResponseApi(),
+                    PropertyImages = x.PropertyImages != null ? toPropertyImageResponseApi(x.PropertyImages) : new List<PropertyImageResponseApi>(),
+                }).FirstOrDefaultAsync(m => m.Id == propertyId);
+
+                return Ok(new Response<object>
+                {
+                    IsSuccess = true,
+                    Message = "Datos de la propiedad.",
+                    Result = property
+                });
+            }
+            catch (Exception ex)
+            {
+                return Ok(new Response<object>
+                {
+                    IsSuccess = false,
+                    Message = "Se ha producido un error al intentar obtener el la información de la propiedad." + ex.Message
+                });
+            }
+        }
+
+        [HttpGet]
         [Route("GetPropertiesWeb/{index}/{countPages}")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<IActionResult> GetProperties(int index, int countPages)
@@ -365,103 +462,6 @@ namespace MyLeasing.Web.Controllers.API
                         PropertyImages = x.PropertyImages != null ? toPropertyImageResponseApi(x.PropertyImages) : new List<PropertyImageResponseApi>(),
                         Contracts = x.Contracts != null ? toContactsResponseApi(x.Contracts) : new List<ContractResponseApi>()
                     }).FirstOrDefaultAsync(m => m.Id == propertyId);
-
-                return Ok(new Response<object>
-                {
-                    IsSuccess = true,
-                    Message = "Datos de la propiedad.",
-                    Result = property
-                });
-            }
-            catch (Exception ex)
-            {
-                return Ok(new Response<object>
-                {
-                    IsSuccess = false,
-                    Message = "Se ha producido un error al intentar obtener el la información de la propiedad." + ex.Message
-                });
-            }
-        }
-
-        [HttpGet]
-        [Route("GetListPropertiesWeb/{index}/{countPages}")]
-        public async Task<IActionResult> GetListProperties(int index, int countPages)
-        {
-            try
-            {
-                var total = await _dataContext.Properties.CountAsync();
-
-                var properties = await _dataContext.Properties
-                .Include(p => p.PropertyType)
-                .Include(p => p.PropertyImages).Select(x => new PropertyResponseApi()
-                {
-                    Id = x.Id,
-                    Neighborhood = x.Neighborhood,
-                    Address = x.Address,
-                    Price = x.Price,
-                    SquareMeters = x.SquareMeters,
-                    Rooms = x.Rooms,
-                    Stratum = x.Stratum,
-                    HasParkingLot = x.HasParkingLot,
-                    IsAvailable = x.IsAvailable,
-                    Remarks = x.Remarks,
-                    Latitude = x.Latitude,
-                    Longitude = x.Longitude,
-                    PropertyType = x.PropertyType != null ? new PropertyTypeResponseApi()
-                    {
-                        Id = x.PropertyType.Id,
-                        Name = x.PropertyType.Name
-                    } : new PropertyTypeResponseApi(),
-                    PropertyImages = x.PropertyImages != null ? toPropertyImageResponseApi(x.PropertyImages) : new List<PropertyImageResponseApi>(),
-                }).Where(p => p.IsAvailable).Skip(index).Take(countPages).ToListAsync();
-
-                return Ok(new Response<object>
-                {
-                    IsSuccess = true,
-                    Message = "Listado de las propiedades.",
-                    Result = properties,
-                    Total = total
-                });
-            }
-            catch (Exception ex)
-            {
-                return Ok(new Response<object>
-                {
-                    IsSuccess = false,
-                    Message = "Se ha producido un error al intentar obtener el listado de las propiedades." + ex.Message
-                });
-            }
-        }
-
-        [HttpGet]
-        [Route("GetPropertyWeb/{propertyId}")]
-        public async Task<IActionResult> GetProperty(int propertyId)
-        {
-            try
-            {
-                var property = await _dataContext.Properties
-                .Include(o => o.PropertyType)
-                .Include(p => p.PropertyImages).Select(x => new PropertyResponseApi()
-                {
-                    Id = x.Id,
-                    Neighborhood = x.Neighborhood,
-                    Address = x.Address,
-                    Price = x.Price,
-                    SquareMeters = x.SquareMeters,
-                    Rooms = x.Rooms,
-                    Stratum = x.Stratum,
-                    HasParkingLot = x.HasParkingLot,
-                    IsAvailable = x.IsAvailable,
-                    Remarks = x.Remarks,
-                    Latitude = x.Latitude,
-                    Longitude = x.Longitude,
-                    PropertyType = x.PropertyType != null ? new PropertyTypeResponseApi()
-                    {
-                        Id = x.PropertyType.Id,
-                        Name = x.PropertyType.Name
-                    } : new PropertyTypeResponseApi(),
-                    PropertyImages = x.PropertyImages != null ? toPropertyImageResponseApi(x.PropertyImages) : new List<PropertyImageResponseApi>(),
-                }).FirstOrDefaultAsync(m => m.Id == propertyId);
 
                 return Ok(new Response<object>
                 {
