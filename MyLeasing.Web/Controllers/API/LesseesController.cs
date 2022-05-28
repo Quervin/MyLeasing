@@ -575,10 +575,10 @@ namespace MyLeasing.Web.Controllers.API
                     Id = x.Lessee.Id,
                     User = new UserResponseApi()
                     {
-                        Document = x.Owner.User.Document,
-                        Address = x.Owner.User.Address,
-                        FirstName = x.Owner.User.FirstName,
-                        LastName = x.Owner.User.LastName
+                        Document = x.Lessee.User.Document,
+                        Address = x.Lessee.User.Address,
+                        FirstName = x.Lessee.User.FirstName,
+                        LastName = x.Lessee.User.LastName
                     }
                 } : new LesseeResponseApi()
             }).ToList();
