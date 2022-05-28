@@ -271,7 +271,10 @@ namespace MyLeasing.Web.Controllers.API
                 var owners = await _dataContext.Owners
                 .Include(o => o.User)
                 .Include(o => o.Properties)
-                .Include(o => o.Contracts).Select(x => new OwnerResponseApi()
+                .Include(o => o.Contracts)
+                .Skip(index).Take(countPages).ToListAsync();
+
+                var ownersList = owners.Select(x => new OwnerResponseApi()
                 {
                     Id = x.Id,
                     User = new UserResponseApi()
@@ -285,13 +288,13 @@ namespace MyLeasing.Web.Controllers.API
                     },
                     Properties = x.Properties != null ? toPropertiesResponseApi(x.Properties) : new List<PropertyResponseApi>(),
                     Contracts = x.Contracts != null ? toContactsResponseApi(x.Contracts) : new List<ContractResponseApi>()
-                }).Skip(index).Take(countPages).ToListAsync();
+                }).ToList();
 
                 return Ok(new Response<object>
                 {
                     IsSuccess = true,
                     Message = "Listado de los owners.",
-                    Result = owners,
+                    Result = ownersList,
                     Total = total
                 });
             }
@@ -301,6 +304,56 @@ namespace MyLeasing.Web.Controllers.API
                 {
                     IsSuccess = false,
                     Message = "Se ha producido un error al intentar obtener el listado de los owners." + ex.Message
+                });
+            }
+        }
+
+        [HttpGet]
+        [Route("GetOwnerWeb/{ownerId}")]
+        public async Task<IActionResult> GetOwner(int ownerId)
+        {
+            try
+            {
+                var owner = await _dataContext.Owners
+                .Include(o => o.User)
+                .FirstOrDefaultAsync(m => m.Id == ownerId);
+
+                if (owner == null)
+                {
+                    return Ok(new Response<object>
+                    {
+                        IsSuccess = false,
+                        Message = "Se ha producido un error al cargar la información del owner."
+                    });
+                }
+
+                var ownerResponse = new OwnerResponseApi()
+                {
+                    Id = owner.Id,
+                    User = new UserResponseApi()
+                    {
+                        Address = owner.User.Address,
+                        Document = owner.User.Document,
+                        FirstName = owner.User.FirstName,
+                        LastName = owner.User.LastName,
+                        Email = owner.User.Email,
+                        Phone = owner.User.PhoneNumber
+                    }
+                };
+
+                return Ok(new Response<object>
+                {
+                    IsSuccess = true,
+                    Message = "Información del owner.",
+                    Result = ownerResponse
+                });
+            }
+            catch (Exception ex)
+            {
+                return Ok(new Response<object>
+                {
+                    IsSuccess = false,
+                    Message = "Se ha producido un error al cargar la información del owner." + ex.Message
                 });
             }
         }
@@ -317,19 +370,8 @@ namespace MyLeasing.Web.Controllers.API
                 .ThenInclude(p => p.PropertyImages)
                 .Include(o => o.Contracts)
                 .ThenInclude(c => c.Lessee)
-                .ThenInclude(l => l.User).Select(x => new OwnerResponseApi()
-                {
-                    Id = x.Id,
-                    User = new UserResponseApi()
-                    {
-                        Address = x.User.Address,
-                        Document = x.User.Document,
-                        FirstName = x.User.FirstName,
-                        LastName = x.User.LastName
-                    },
-                    Properties = x.Properties != null ? toPropertiesResponseApi(x.Properties) : new List<PropertyResponseApi>(),
-                    Contracts = x.Contracts != null ? toContactsResponseApi(x.Contracts) : new List<ContractResponseApi>()
-                }).FirstOrDefaultAsync(m => m.Id == ownerId);
+                .ThenInclude(l => l.User)
+                .FirstOrDefaultAsync(m => m.Id == ownerId);
 
                 if (owner == null)
                 {
@@ -340,11 +382,25 @@ namespace MyLeasing.Web.Controllers.API
                     });
                 }
 
+                var ownerResponse = new OwnerResponseApi()
+                {
+                    Id = owner.Id,
+                    User = new UserResponseApi()
+                    {
+                        Address = owner.User.Address,
+                        Document = owner.User.Document,
+                        FirstName = owner.User.FirstName,
+                        LastName = owner.User.LastName
+                    },
+                    Properties = owner.Properties != null ? toPropertiesResponseApi(owner.Properties) : new List<PropertyResponseApi>(),
+                    Contracts = owner.Contracts != null ? toContactsResponseApi(owner.Contracts) : new List<ContractResponseApi>()
+                };
+
                 return Ok(new Response<object>
                 {
                     IsSuccess = true,
                     Message = "Información del owner.",
-                    Result = owner
+                    Result = ownerResponse
                 });
             }
             catch (Exception ex)
@@ -683,27 +739,8 @@ namespace MyLeasing.Web.Controllers.API
                 .ThenInclude(c => c.Lessee)
                 .ThenInclude(l => l.User)
                 .Include(o => o.PropertyType)
-                .Include(p => p.PropertyImages).Select(x => new PropertyResponseApi()
-                {
-                    Id = x.Id,
-                    Neighborhood = x.Neighborhood,
-                    Address = x.Address,
-                    Price = x.Price,
-                    SquareMeters = x.SquareMeters,
-                    Rooms = x.Rooms,
-                    Stratum = x.Stratum,
-                    HasParkingLot = x.HasParkingLot,
-                    IsAvailable = x.IsAvailable,
-                    Remarks = x.Remarks,
-                    Latitude = x.Latitude,
-                    Longitude = x.Longitude,
-                    PropertyType = x.PropertyType != null ? new PropertyTypeResponseApi()
-                    {
-                        Id = x.PropertyType.Id,
-                        Name = x.PropertyType.Name
-                    } : new PropertyTypeResponseApi(),
-                    PropertyImages = x.PropertyImages != null ? toPropertyImageResponseApi(x.PropertyImages) : new List<PropertyImageResponseApi>(),
-                }).FirstOrDefaultAsync(p => p.Id == propertyId);
+                .Include(p => p.PropertyImages)
+                .FirstOrDefaultAsync(p => p.Id == propertyId);
 
                 if (property == null)
                 {
@@ -714,11 +751,33 @@ namespace MyLeasing.Web.Controllers.API
                     });
                 }
 
+                var propertyDetails = new PropertyResponseApi()
+                {
+                    Id = property.Id,
+                    Neighborhood = property.Neighborhood,
+                    Address = property.Address,
+                    Price = property.Price,
+                    SquareMeters = property.SquareMeters,
+                    Rooms = property.Rooms,
+                    Stratum = property.Stratum,
+                    HasParkingLot = property.HasParkingLot,
+                    IsAvailable = property.IsAvailable,
+                    Remarks = property.Remarks,
+                    Latitude = property.Latitude,
+                    Longitude = property.Longitude,
+                    PropertyType = property.PropertyType != null ? new PropertyTypeResponseApi()
+                    {
+                        Id = property.PropertyType.Id,
+                        Name = property.PropertyType.Name
+                    } : new PropertyTypeResponseApi(),
+                    PropertyImages = property.PropertyImages != null ? toPropertyImageResponseApi(property.PropertyImages) : new List<PropertyImageResponseApi>(),
+                };
+
                 return Ok(new Response<object>
                 {
                     IsSuccess = true,
                     Message = "Información de la propiedad.",
-                    Result = property
+                    Result = propertyDetails
                 });
             }
             catch (Exception ex)
@@ -1048,73 +1107,8 @@ namespace MyLeasing.Web.Controllers.API
                     .Include(c => c.Lessee)
                     .ThenInclude(o => o.User)
                     .Include(c => c.Property)
-                    .ThenInclude(p => p.PropertyType).Select(x => new ContractResponseApi()
-                    {
-                        Id = x.Id,
-                        StartDate = x.StartDate,
-                        EndDate = x.EndDate,
-                        IsActive = x.IsActive,
-                        Remarks = x.Remarks,
-                        Price = x.Price,
-                        Owner = x.Owner != null ? new OwnerResponseApi()
-                        {
-                            Id = x.Id,
-                            User = new UserResponseApi()
-                            {
-                                Address = x.Owner.User.Address,
-                                Document = x.Owner.User.Document,
-                                FirstName = x.Owner.User.FirstName,
-                                LastName = x.Owner.User.LastName
-                            },
-                            Properties = x.Owner.Properties != null ? toPropertiesResponseApi(x.Owner.Properties) : new List<PropertyResponseApi>(),
-                            Contracts = x.Owner.Contracts != null ? toContactsResponseApi(x.Owner.Contracts) : new List<ContractResponseApi>()
-                        }  : new OwnerResponseApi(),
-                        Lessee = x.Lessee != null ? new LesseeResponseApi()
-                        {
-                            Id = x.Id,
-                            User = new UserResponseApi()
-                            {
-                                Address = x.Lessee.User.Address,
-                                Document = x.Lessee.User.Document,
-                                FirstName = x.Lessee.User.FirstName,
-                                LastName = x.Lessee.User.LastName
-                            },
-                            Contracts = x.Lessee.Contracts != null ? toContactsResponseApi(x.Lessee.Contracts) : new List<ContractResponseApi>()
-                        } : new LesseeResponseApi(),
-                        Property = x.Property != null ? new PropertyResponseApi()
-                        {
-                            Id = x.Property.Id,
-                            Neighborhood = x.Property.Neighborhood,
-                            Address = x.Property.Address,
-                            Price = x.Property.Price,
-                            SquareMeters = x.Property.SquareMeters,
-                            Rooms = x.Property.Rooms,
-                            Stratum = x.Property.Stratum,
-                            HasParkingLot = x.Property.HasParkingLot,
-                            IsAvailable = x.Property.IsAvailable,
-                            Remarks = x.Property.Remarks,
-                            Latitude = x.Property.Latitude,
-                            Longitude = x.Property.Longitude,
-                            PropertyType = x.Property.PropertyType != null ? new PropertyTypeResponseApi()
-                            {
-                                Id = x.Property.PropertyType.Id,
-                                Name = x.Property.PropertyType.Name
-                            } : new PropertyTypeResponseApi(),
-                            Owner = x.Property.Owner != null ? new OwnerResponseApi()
-                            {
-                                Id = x.Property.Owner.Id,
-                                User = new UserResponseApi()
-                                {
-                                    Document = x.Property.Owner.User.Document,
-                                    Address = x.Property.Owner.User.Address,
-                                    FirstName = x.Property.Owner.User.FirstName,
-                                    LastName = x.Property.Owner.User.LastName
-                                }
-                            } : new OwnerResponseApi(),
-                            PropertyImages = x.Property.PropertyImages != null ? toPropertyImageResponseApi(x.Property.PropertyImages) : new List<PropertyImageResponseApi>(),
-                            Contracts = x.Property.Contracts != null ? toContactsResponseApi(x.Property.Contracts) : new List<ContractResponseApi>()
-                        } : new PropertyResponseApi()
-                    }).FirstOrDefaultAsync(pi => pi.Id == contractId);
+                    .ThenInclude(p => p.PropertyType)
+                    .FirstOrDefaultAsync(pi => pi.Id == contractId);
 
                 if (contract == null)
                 {
@@ -1125,11 +1119,79 @@ namespace MyLeasing.Web.Controllers.API
                     });
                 }
 
+                var contractResponse = new ContractResponseApi()
+                {
+                    Id = contract.Id,
+                    StartDate = contract.StartDate,
+                    EndDate = contract.EndDate,
+                    IsActive = contract.IsActive,
+                    Remarks = contract.Remarks,
+                    Price = contract.Price,
+                    Owner = contract.Owner != null ? new OwnerResponseApi()
+                    {
+                        Id = contract.Id,
+                        User = new UserResponseApi()
+                        {
+                            Address = contract.Owner.User.Address,
+                            Document = contract.Owner.User.Document,
+                            FirstName = contract.Owner.User.FirstName,
+                            LastName = contract.Owner.User.LastName
+                        },
+                        Properties = contract.Owner.Properties != null ? toPropertiesResponseApi(contract.Owner.Properties) : new List<PropertyResponseApi>(),
+                        Contracts = contract.Owner.Contracts != null ? toContactsResponseApi(contract.Owner.Contracts) : new List<ContractResponseApi>()
+                    } : new OwnerResponseApi(),
+                    Lessee = contract.Lessee != null ? new LesseeResponseApi()
+                    {
+                        Id = contract.Id,
+                        User = new UserResponseApi()
+                        {
+                            Address = contract.Lessee.User.Address,
+                            Document = contract.Lessee.User.Document,
+                            FirstName = contract.Lessee.User.FirstName,
+                            LastName = contract.Lessee.User.LastName
+                        },
+                        Contracts = contract.Lessee.Contracts != null ? toContactsResponseApi(contract.Lessee.Contracts) : new List<ContractResponseApi>()
+                    } : new LesseeResponseApi(),
+                    Property = contract.Property != null ? new PropertyResponseApi()
+                    {
+                        Id = contract.Property.Id,
+                        Neighborhood = contract.Property.Neighborhood,
+                        Address = contract.Property.Address,
+                        Price = contract.Property.Price,
+                        SquareMeters = contract.Property.SquareMeters,
+                        Rooms = contract.Property.Rooms,
+                        Stratum = contract.Property.Stratum,
+                        HasParkingLot = contract.Property.HasParkingLot,
+                        IsAvailable = contract.Property.IsAvailable,
+                        Remarks = contract.Property.Remarks,
+                        Latitude = contract.Property.Latitude,
+                        Longitude = contract.Property.Longitude,
+                        PropertyType = contract.Property.PropertyType != null ? new PropertyTypeResponseApi()
+                        {
+                            Id = contract.Property.PropertyType.Id,
+                            Name = contract.Property.PropertyType.Name
+                        } : new PropertyTypeResponseApi(),
+                        Owner = contract.Property.Owner != null ? new OwnerResponseApi()
+                        {
+                            Id = contract.Property.Owner.Id,
+                            User = new UserResponseApi()
+                            {
+                                Document = contract.Property.Owner.User.Document,
+                                Address = contract.Property.Owner.User.Address,
+                                FirstName = contract.Property.Owner.User.FirstName,
+                                LastName = contract.Property.Owner.User.LastName
+                            }
+                        } : new OwnerResponseApi(),
+                        PropertyImages = contract.Property.PropertyImages != null ? toPropertyImageResponseApi(contract.Property.PropertyImages) : new List<PropertyImageResponseApi>(),
+                        Contracts = contract.Property.Contracts != null ? toContactsResponseApi(contract.Property.Contracts) : new List<ContractResponseApi>()
+                    } : new PropertyResponseApi()
+                };
+
                 return Ok(new Response<object>
                 {
                     IsSuccess = true,
                     Message = "Información del contrato.",
-                    Result = contract
+                    Result = contractResponse
                 });
             }
             catch (Exception ex)

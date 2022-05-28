@@ -43,25 +43,30 @@ namespace MyLeasing.Web.Controllers.API
                 var total = await _dataContext.Managers.CountAsync();
 
                 var managers = await _dataContext.Managers
-                    .Include(m => m.User).Select(x => new ManagerResponseApi()
+                    .Include(m => m.User)
+                    .Skip(index)
+                    .Take(countPages)
+                    .ToListAsync();
+
+                var managersList = managers.Select(x => new ManagerResponseApi()
+                {
+                    Id = x.Id,
+                    User = new UserResponseApi()
                     {
-                        Id = x.Id,
-                        User = new UserResponseApi()
-                        {
-                            Address = x.User.Address,
-                            Document = x.User.Document,
-                            FirstName = x.User.FirstName,
-                            LastName = x.User.LastName,
-                            Email = x.User.Email,
-                            Phone = x.User.PhoneNumber
-                        }
-                    }).Skip(index).Take(countPages).ToListAsync();
+                        Address = x.User.Address,
+                        Document = x.User.Document,
+                        FirstName = x.User.FirstName,
+                        LastName = x.User.LastName,
+                        Email = x.User.Email,
+                        Phone = x.User.PhoneNumber
+                    }
+                }).ToList();
 
                 return Ok(new Response<object>
                 {
                     IsSuccess = true,
                     Message = "Listado de las managers.",
-                    Result = managers,
+                    Result = managersList,
                     Total = total
                 });
             }
@@ -76,23 +81,14 @@ namespace MyLeasing.Web.Controllers.API
         }
 
         [HttpGet]
-        [Route("DetailsManagerWeb/{managerId}")]
-        public async Task<IActionResult> DetailsManager(int managerId)
+        [Route("GetManagerWeb/{managerId}")]
+        public async Task<IActionResult> GetManager(int managerId)
         {
             try
             {
                 var manager = await _dataContext.Managers
-                .Include(o => o.User).Select(x => new ManagerResponseApi()
-                {
-                    Id = x.Id,
-                    User = new UserResponseApi()
-                    {
-                        Address = x.User.Address,
-                        Document = x.User.Document,
-                        FirstName = x.User.FirstName,
-                        LastName = x.User.LastName
-                    }
-                }).FirstOrDefaultAsync(o => o.Id == managerId);
+                .Include(o => o.User)
+                .FirstOrDefaultAsync(o => o.Id == managerId);
 
                 if (manager == null)
                 {
@@ -103,11 +99,71 @@ namespace MyLeasing.Web.Controllers.API
                     });
                 }
 
+                var managerResponse = new ManagerResponseApi()
+                {
+                    Id = manager.Id,
+                    User = new UserResponseApi()
+                    {
+                        Address = manager.User.Address,
+                        Document = manager.User.Document,
+                        FirstName = manager.User.FirstName,
+                        LastName = manager.User.LastName
+                    }
+                };
+
                 return Ok(new Response<object>
                 {
                     IsSuccess = true,
                     Message = "Información del manager.",
-                    Result = manager
+                    Result = managerResponse
+                });
+            }
+            catch (Exception ex)
+            {
+                return Ok(new Response<object>
+                {
+                    IsSuccess = false,
+                    Message = "Se ha producido un error al cargar la información del maneger." + ex.Message
+                });
+            }
+        }
+
+        [HttpGet]
+        [Route("DetailsManagerWeb/{managerId}")]
+        public async Task<IActionResult> DetailsManager(int managerId)
+        {
+            try
+            {
+                var manager = await _dataContext.Managers
+                .Include(o => o.User)
+                .FirstOrDefaultAsync(o => o.Id == managerId);
+
+                if (manager == null)
+                {
+                    return Ok(new Response<object>
+                    {
+                        IsSuccess = false,
+                        Message = "Se ha producido un error al cargar la información del maneger."
+                    });
+                }
+
+                var managerResponse = new ManagerResponseApi()
+                {
+                    Id = manager.Id,
+                    User = new UserResponseApi()
+                    {
+                        Address = manager.User.Address,
+                        Document = manager.User.Document,
+                        FirstName = manager.User.FirstName,
+                        LastName = manager.User.LastName
+                    }
+                };
+
+                return Ok(new Response<object>
+                {
+                    IsSuccess = true,
+                    Message = "Información del manager.",
+                    Result = managerResponse
                 });
             }
             catch (Exception ex)

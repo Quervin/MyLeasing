@@ -261,7 +261,13 @@ namespace MyLeasing.Web.Controllers.API
 
                 var properties = await _dataContext.Properties
                 .Include(p => p.PropertyType)
-                .Include(p => p.PropertyImages).Select(x => new PropertyResponseApi()
+                .Include(p => p.PropertyImages)
+                .Where(p => p.IsAvailable)
+                .Skip(index)
+                .Take(countPages)
+                .ToListAsync();
+
+                var propertiesList = properties.Select(x => new PropertyResponseApi()
                 {
                     Id = x.Id,
                     Neighborhood = x.Neighborhood,
@@ -281,13 +287,13 @@ namespace MyLeasing.Web.Controllers.API
                         Name = x.PropertyType.Name
                     } : new PropertyTypeResponseApi(),
                     PropertyImages = x.PropertyImages != null ? toPropertyImageResponseApi(x.PropertyImages) : new List<PropertyImageResponseApi>(),
-                }).Where(p => p.IsAvailable).Skip(index).Take(countPages).ToListAsync();
+                }).ToList();
 
                 return Ok(new Response<object>
                 {
                     IsSuccess = true,
                     Message = "Listado de las propiedades.",
-                    Result = properties,
+                    Result = propertiesList,
                     Total = total
                 });
             }
@@ -309,33 +315,36 @@ namespace MyLeasing.Web.Controllers.API
             {
                 var property = await _dataContext.Properties
                 .Include(o => o.PropertyType)
-                .Include(p => p.PropertyImages).Select(x => new PropertyResponseApi()
+                .Include(p => p.PropertyImages)
+                .FirstOrDefaultAsync(m => m.Id == propertyId);
+
+                var propertyReponse = new PropertyResponseApi()
                 {
-                    Id = x.Id,
-                    Neighborhood = x.Neighborhood,
-                    Address = x.Address,
-                    Price = x.Price,
-                    SquareMeters = x.SquareMeters,
-                    Rooms = x.Rooms,
-                    Stratum = x.Stratum,
-                    HasParkingLot = x.HasParkingLot,
-                    IsAvailable = x.IsAvailable,
-                    Remarks = x.Remarks,
-                    Latitude = x.Latitude,
-                    Longitude = x.Longitude,
-                    PropertyType = x.PropertyType != null ? new PropertyTypeResponseApi()
+                    Id = property.Id,
+                    Neighborhood = property.Neighborhood,
+                    Address = property.Address,
+                    Price = property.Price,
+                    SquareMeters = property.SquareMeters,
+                    Rooms = property.Rooms,
+                    Stratum = property.Stratum,
+                    HasParkingLot = property.HasParkingLot,
+                    IsAvailable = property.IsAvailable,
+                    Remarks = property.Remarks,
+                    Latitude = property.Latitude,
+                    Longitude = property.Longitude,
+                    PropertyType = property.PropertyType != null ? new PropertyTypeResponseApi()
                     {
-                        Id = x.PropertyType.Id,
-                        Name = x.PropertyType.Name
+                        Id = property.PropertyType.Id,
+                        Name = property.PropertyType.Name
                     } : new PropertyTypeResponseApi(),
-                    PropertyImages = x.PropertyImages != null ? toPropertyImageResponseApi(x.PropertyImages) : new List<PropertyImageResponseApi>(),
-                }).FirstOrDefaultAsync(m => m.Id == propertyId);
+                    PropertyImages = property.PropertyImages != null ? toPropertyImageResponseApi(property.PropertyImages) : new List<PropertyImageResponseApi>(),
+                };
 
                 return Ok(new Response<object>
                 {
                     IsSuccess = true,
                     Message = "Datos de la propiedad.",
-                    Result = property
+                    Result = propertyReponse
                 });
             }
             catch (Exception ex)
@@ -359,49 +368,54 @@ namespace MyLeasing.Web.Controllers.API
                 var total = await _dataContext.Properties.CountAsync();
 
                 var properties = await _dataContext.Properties
-                    .Include(p => p.PropertyType)
-                    .Include(p => p.PropertyImages)
-                    .Include(p => p.Contracts)
-                    .Include(p => p.Owner)
-                    .ThenInclude(o => o.User).Select(x => new PropertyResponseApi()
+                   .Include(p => p.PropertyType)
+                   .Include(p => p.PropertyImages)
+                   .Include(p => p.Contracts)
+                   .Include(p => p.Owner)
+                   .ThenInclude(o => o.User)
+                   .Skip(index)
+                   .Take(countPages)
+                   .ToListAsync();
+
+                var propertiesList = properties.Select(x => new PropertyResponseApi()
+                {
+                    Id = x.Id,
+                    Neighborhood = x.Neighborhood,
+                    Address = x.Address,
+                    Price = x.Price,
+                    SquareMeters = x.SquareMeters,
+                    Rooms = x.Rooms,
+                    Stratum = x.Stratum,
+                    HasParkingLot = x.HasParkingLot,
+                    IsAvailable = x.IsAvailable,
+                    Remarks = x.Remarks,
+                    Latitude = x.Latitude,
+                    Longitude = x.Longitude,
+                    PropertyType = x.PropertyType != null ? new PropertyTypeResponseApi()
                     {
-                        Id = x.Id,
-                        Neighborhood = x.Neighborhood,
-                        Address = x.Address,
-                        Price = x.Price,
-                        SquareMeters = x.SquareMeters,
-                        Rooms = x.Rooms,
-                        Stratum = x.Stratum,
-                        HasParkingLot = x.HasParkingLot,
-                        IsAvailable = x.IsAvailable,
-                        Remarks = x.Remarks,
-                        Latitude = x.Latitude,
-                        Longitude = x.Longitude,
-                        PropertyType = x.PropertyType != null ? new PropertyTypeResponseApi()
+                        Id = x.PropertyType.Id,
+                        Name = x.PropertyType.Name
+                    } : new PropertyTypeResponseApi(),
+                    Owner = x.Owner != null ? new OwnerResponseApi()
+                    {
+                        Id = x.Owner.Id,
+                        User = new UserResponseApi()
                         {
-                            Id = x.PropertyType.Id,
-                            Name = x.PropertyType.Name
-                        } : new PropertyTypeResponseApi(),
-                        Owner = x.Owner != null ? new OwnerResponseApi()
-                        {
-                            Id = x.Owner.Id,
-                            User = new UserResponseApi()
-                            {
-                                Document = x.Owner.User.Document,
-                                Address = x.Owner.User.Address,
-                                FirstName = x.Owner.User.FirstName,
-                                LastName = x.Owner.User.LastName
-                            }
-                        } : new OwnerResponseApi(),
-                        PropertyImages = x.PropertyImages != null ? toPropertyImageResponseApi(x.PropertyImages) : new List<PropertyImageResponseApi>(),
-                        Contracts = x.Contracts != null ? toContactsResponseApi(x.Contracts) : new List<ContractResponseApi>()
-                    }).Skip(index).Take(countPages).ToListAsync();
+                            Document = x.Owner.User.Document,
+                            Address = x.Owner.User.Address,
+                            FirstName = x.Owner.User.FirstName,
+                            LastName = x.Owner.User.LastName
+                        }
+                    } : new OwnerResponseApi(),
+                    PropertyImages = x.PropertyImages != null ? toPropertyImageResponseApi(x.PropertyImages) : new List<PropertyImageResponseApi>(),
+                    Contracts = x.Contracts != null ? toContactsResponseApi(x.Contracts) : new List<ContractResponseApi>()
+                }).ToList();
 
                 return Ok(new Response<object>
                 {
                     IsSuccess = true,
                     Message = "Listado de las propiedades.",
-                    Result = properties,
+                    Result = propertiesList,
                     Total = total
                 });
             }
@@ -422,52 +436,57 @@ namespace MyLeasing.Web.Controllers.API
         {
             try
             {
+
                 var property = await _dataContext.Properties
-                    .Include(o => o.Owner)
-                    .ThenInclude(o => o.User)
-                    .Include(o => o.Contracts)
-                    .ThenInclude(c => c.Lessee)
-                    .ThenInclude(l => l.User)
-                    .Include(o => o.PropertyType)
-                    .Include(p => p.PropertyImages).Select(x => new PropertyResponseApi()
+                .Include(o => o.Owner)
+                .ThenInclude(o => o.User)
+                .Include(o => o.Contracts)
+                .ThenInclude(c => c.Lessee)
+                .ThenInclude(l => l.User)
+                .Include(o => o.PropertyType)
+                .Include(p => p.PropertyImages)
+                .FirstOrDefaultAsync(m => m.Id == propertyId);
+
+                var propertyDetails = new PropertyResponseApi()
+                {
+                    Id = property.Id,
+                    Neighborhood = property.Neighborhood,
+                    Address = property.Address,
+                    Price = property.Price,
+                    SquareMeters = property.SquareMeters,
+                    Rooms = property.Rooms,
+                    Stratum = property.Stratum,
+                    HasParkingLot = property.HasParkingLot,
+                    IsAvailable = property.IsAvailable,
+                    Remarks = property.Remarks,
+                    Latitude = property.Latitude,
+                    Longitude = property.Longitude,
+                    PropertyType = property.PropertyType != null ? new PropertyTypeResponseApi()
                     {
-                        Id = x.Id,
-                        Neighborhood = x.Neighborhood,
-                        Address = x.Address,
-                        Price = x.Price,
-                        SquareMeters = x.SquareMeters,
-                        Rooms = x.Rooms,
-                        Stratum = x.Stratum,
-                        HasParkingLot = x.HasParkingLot,
-                        IsAvailable = x.IsAvailable,
-                        Remarks = x.Remarks,
-                        Latitude = x.Latitude,
-                        Longitude = x.Longitude,
-                        PropertyType = x.PropertyType != null ? new PropertyTypeResponseApi()
+                        Id = property.PropertyType.Id,
+                        Name = property.PropertyType.Name
+                    } : new PropertyTypeResponseApi(),
+                    Owner = property.Owner != null ? new OwnerResponseApi()
+                    {
+                        Id = property.Owner.Id,
+                        User = new UserResponseApi()
                         {
-                            Id = x.PropertyType.Id,
-                            Name = x.PropertyType.Name
-                        } : new PropertyTypeResponseApi(),
-                        Owner = x.Owner != null ? new OwnerResponseApi()
-                        {
-                            Id = x.Owner.Id,
-                            User = new UserResponseApi()
-                            {
-                                Document = x.Owner.User.Document,
-                                Address = x.Owner.User.Address,
-                                FirstName = x.Owner.User.FirstName,
-                                LastName = x.Owner.User.LastName
-                            }
-                        } : new OwnerResponseApi(),
-                        PropertyImages = x.PropertyImages != null ? toPropertyImageResponseApi(x.PropertyImages) : new List<PropertyImageResponseApi>(),
-                        Contracts = x.Contracts != null ? toContactsResponseApi(x.Contracts) : new List<ContractResponseApi>()
-                    }).FirstOrDefaultAsync(m => m.Id == propertyId);
+                            Document = property.Owner.User.Document,
+                            Address = property.Owner.User.Address,
+                            FirstName = property.Owner.User.FirstName,
+                            LastName = property.Owner.User.LastName,
+                            Phone = property.Owner.User.PhoneNumber
+                        }
+                    } : new OwnerResponseApi(),
+                    PropertyImages = property.PropertyImages != null ? toPropertyImageResponseApi(property.PropertyImages) : new List<PropertyImageResponseApi>(),
+                    Contracts = property.Contracts != null ? toContactsResponseApi(property.Contracts) : new List<ContractResponseApi>()
+                };
 
                 return Ok(new Response<object>
                 {
                     IsSuccess = true,
                     Message = "Datos de la propiedad.",
-                    Result = property
+                    Result = propertyDetails
                 });
             }
             catch (Exception ex)

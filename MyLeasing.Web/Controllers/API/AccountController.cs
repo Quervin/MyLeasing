@@ -37,7 +37,7 @@ namespace MyLeasing.Web.Controllers.API
             _dataContext = dataContext;
             _userHelper = userHelper;
             _mailHelper = mailHelper;
-             _configuration = configuration;
+            _configuration = configuration;
         }
 
         [HttpPost]
@@ -167,7 +167,7 @@ namespace MyLeasing.Web.Controllers.API
                 return BadRequest(new Response<object>
                 {
                     IsSuccess = false,
-                    Message = "Bad request" + ex.Message 
+                    Message = "Bad request" + ex.Message
                 });
             }
         }
@@ -314,14 +314,14 @@ namespace MyLeasing.Web.Controllers.API
                                 Expiration = DateTime.Now.AddHours(1),
                                 UserId = user.Id,
                                 RolId = ListRol[0],
-                                IsSuccess = true 
+                                IsSuccess = true
                             };
 
                             return Ok(results);
                         }
                     }
                 }
-                catch (Exception ex )
+                catch (Exception ex)
                 {
                     return Ok(new TokenResponse
                     {
@@ -421,7 +421,7 @@ namespace MyLeasing.Web.Controllers.API
                     Message = "Se ha producido un error al intertar regristrar el usuario." + ex.Message
                 });
             }
-           
+
         }
 
         [HttpPost]

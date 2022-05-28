@@ -41,18 +41,23 @@ namespace MyLeasing.Web.Controllers.API
             {
                 var total = await _dataContext.PropertyTypes.CountAsync();
 
-                var propertyTypes = await _dataContext.PropertyTypes.Select(x => new PropertyTypeResponseApi()
+                var propertyTypes = await _dataContext.PropertyTypes.Include(o => o.Properties)
+                    .Skip(index)
+                    .Take(countPages)
+                    .ToListAsync();
+
+                var propertyTypesList = propertyTypes.Select(x => new PropertyTypeResponseApi()
                 {
                     Id = x.Id,
                     Name = x.Name,
                     Properties = x.Properties != null ? toPropertiesResponseApi(x.Properties) : new List<PropertyResponseApi>(),
-                }).Skip(index).Take(countPages).ToListAsync();
+                }).ToList();
 
                 return Ok(new Response<object>
                 {
                     IsSuccess = true,
                     Message = "Listado de los tipo de propiedades.",
-                    Result = propertyTypes,
+                    Result = propertyTypesList,
                     Total = total
                 });
             }
@@ -67,23 +72,60 @@ namespace MyLeasing.Web.Controllers.API
         }
 
         [HttpGet]
+        [Route("GetPropertyTypeWeb/{propertyTypeId}")]
+        public async Task<IActionResult> GetPropertyType(int propertyTypeId)
+        {
+            try
+            {
+                var propertyType = await _dataContext.PropertyTypes.FirstOrDefaultAsync(m => m.Id == propertyTypeId);
+
+
+                var propertyTypeResponse = new PropertyTypeResponseApi()
+                {
+                    Id = propertyType.Id,
+                    Name = propertyType.Name,
+                };
+
+                return Ok(new Response<object>
+                {
+                    IsSuccess = true,
+                    Message = "Tipo de propiedad.",
+                    Result = propertyTypeResponse
+                });
+            }
+            catch (Exception ex)
+            {
+                return Ok(new Response<object>
+                {
+                    IsSuccess = false,
+                    Message = "Se ha producido un error al intentar obtener el tipo de propiedad." + ex.Message
+                });
+            }
+        }
+
+        [HttpGet]
         [Route("DetailsPropertiesTypeWeb/{propertyTypeId}")]
         public async Task<IActionResult> DetailsPropertiesType(int propertyTypeId)
         {
             try
             {
-                var propertyType = await _dataContext.PropertyTypes.Include(o => o.Properties).Select(x => new PropertyTypeResponseApi()
+                var propertyType = await _dataContext.PropertyTypes
+                    .Include(o => o.Properties)
+                    .ThenInclude(p => p.PropertyImages)
+                    .FirstOrDefaultAsync(m => m.Id == propertyTypeId);
+
+                var propertyTypeResponse = new PropertyTypeResponseApi()
                 {
-                    Id = x.Id,
-                    Name = x.Name,
-                    Properties = x.Properties != null ? toPropertiesResponseApi(x.Properties) : new List<PropertyResponseApi>(),
-                }).FirstOrDefaultAsync(m => m.Id == propertyTypeId);
+                    Id = propertyType.Id,
+                    Name = propertyType.Name,
+                    Properties = propertyType.Properties != null ? toPropertiesResponseApi(propertyType.Properties) : new List<PropertyResponseApi>()
+                };
 
                 return Ok(new Response<object>
                 {
                     IsSuccess = true,
                     Message = "Listado de los tipo de propiedades.",
-                    Result = propertyType
+                    Result = propertyTypeResponse
                 });
             }
             catch (Exception ex)
@@ -152,6 +194,7 @@ namespace MyLeasing.Web.Controllers.API
 
                 var propertyType = new PropertyType
                 {
+                    Id = request.Id,
                     Name = request.Name
                 };
 
@@ -175,7 +218,7 @@ namespace MyLeasing.Web.Controllers.API
         }
 
         [HttpGet]
-        [Route("DeleteWeb/{propertieId}")]
+        [Route("DeleteWeb/{propertyTypeId}")]
         public async Task<IActionResult> Delete(int propertyTypeId)
         {
             try
@@ -237,24 +280,7 @@ namespace MyLeasing.Web.Controllers.API
                 Remarks = x.Remarks,
                 Latitude = x.Latitude,
                 Longitude = x.Longitude,
-                PropertyType = x.PropertyType != null ? new PropertyTypeResponseApi()
-                {
-                    Id = x.PropertyType.Id,
-                    Name = x.PropertyType.Name
-                } : new PropertyTypeResponseApi(),
-                Owner = x.Owner != null ? new OwnerResponseApi()
-                {
-                    Id = x.Owner.Id,
-                    User = new UserResponseApi()
-                    {
-                        Document = x.Owner.User.Document,
-                        Address = x.Owner.User.Address,
-                        FirstName = x.Owner.User.FirstName,
-                        LastName = x.Owner.User.LastName
-                    }
-                } : new OwnerResponseApi(),
                 PropertyImages = x.PropertyImages != null ? toPropertyImageResponseApi(x.PropertyImages) : new List<PropertyImageResponseApi>(),
-                Contracts = x.Contracts != null ? toContactsResponseApi(x.Contracts) : new List<ContractResponseApi>()
             }).ToList();
         }
 
@@ -264,41 +290,6 @@ namespace MyLeasing.Web.Controllers.API
             {
                 Id = x.Id,
                 ImageUrl = x.ImageUrl
-            }).ToList();
-        }
-
-        private List<ContractResponseApi> toContactsResponseApi(ICollection<Contract> contracts)
-        {
-            return contracts.Select(x => new ContractResponseApi()
-            {
-                Id = x.Id,
-                EndDate = x.EndDate,
-                IsActive = x.IsActive,
-                StartDate = x.StartDate,
-                Remarks = x.Remarks,
-                Price = x.Price,
-                Owner = x.Owner != null ? new OwnerResponseApi()
-                {
-                    Id = x.Owner.Id,
-                    User = new UserResponseApi()
-                    {
-                        Document = x.Owner.User.Document,
-                        Address = x.Owner.User.Address,
-                        FirstName = x.Owner.User.FirstName,
-                        LastName = x.Owner.User.LastName
-                    }
-                } : new OwnerResponseApi(),
-                Lessee = x.Lessee != null ? new LesseeResponseApi()
-                {
-                    Id = x.Lessee.Id,
-                    User = new UserResponseApi()
-                    {
-                        Document = x.Owner.User.Document,
-                        Address = x.Owner.User.Address,
-                        FirstName = x.Owner.User.FirstName,
-                        LastName = x.Owner.User.LastName
-                    }
-                } : new LesseeResponseApi()
             }).ToList();
         }
 
