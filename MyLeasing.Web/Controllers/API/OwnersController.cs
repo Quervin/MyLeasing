@@ -24,18 +24,18 @@ namespace MyLeasing.Web.Controllers.API
         private readonly DataContext _dataContext;
         private readonly IUserHelper _userHelper;
         private readonly IMailHelper _mailHelper;
-        private readonly IConverterHelper _converterHelper;
+        private readonly IImageHelper _imageHelper;
 
         public OwnersController(
             DataContext dataContext,
             IUserHelper userHelper,
             IMailHelper mailHelper,
-            IConverterHelper converterHelper)
+            IImageHelper imageHelper)
         {
             _dataContext = dataContext;
             _userHelper = userHelper;
-            _converterHelper = converterHelper;
             _mailHelper = mailHelper;
+            _imageHelper = imageHelper;
         }
 
         [HttpPost]
@@ -390,7 +390,9 @@ namespace MyLeasing.Web.Controllers.API
                         Address = owner.User.Address,
                         Document = owner.User.Document,
                         FirstName = owner.User.FirstName,
-                        LastName = owner.User.LastName
+                        LastName = owner.User.LastName,
+                        Phone = owner.User.PhoneNumber,
+                        Email = owner.User.Email
                     },
                     Properties = owner.Properties != null ? toPropertiesResponseApi(owner.Properties) : new List<PropertyResponseApi>(),
                     Contracts = owner.Contracts != null ? toContactsResponseApi(owner.Contracts) : new List<ContractResponseApi>()
@@ -586,6 +588,68 @@ namespace MyLeasing.Web.Controllers.API
             }
         }
 
+        [HttpGet]
+        [Route("GetPropertyWeb/{propertyId}")]
+        public async Task<IActionResult> GetProperty(int propertyId)
+        {
+            try
+            {
+                var property = await _dataContext.Properties
+                .Include(p => p.Owner)
+                .Include(p => p.PropertyType)
+                .FirstOrDefaultAsync(p => p.Id == propertyId);
+
+                if (property == null)
+                {
+                    return Ok(new Response<object>
+                    {
+                        IsSuccess = false,
+                        Message = "Se ha producido un error al cargar la información de la propiedad."
+                    });
+                }
+
+                var propertyReponse = new PropertyResponseApi()
+                {
+                    Id = property.Id,
+                    Neighborhood = property.Neighborhood,
+                    Address = property.Address,
+                    Price = property.Price,
+                    SquareMeters = property.SquareMeters,
+                    Rooms = property.Rooms,
+                    Stratum = property.Stratum,
+                    HasParkingLot = property.HasParkingLot,
+                    IsAvailable = property.IsAvailable,
+                    Remarks = property.Remarks,
+                    Latitude = property.Latitude,
+                    Longitude = property.Longitude,
+                    PropertyType = property.PropertyType != null ? new PropertyTypeResponseApi()
+                    {
+                        Id = property.PropertyType.Id,
+                        Name = property.PropertyType.Name
+                    } : new PropertyTypeResponseApi(),
+                    Owner = property.Owner != null ? new OwnerResponseApi()
+                    {
+                        Id = property.Owner.Id
+                    } : new OwnerResponseApi()
+                };
+
+                return Ok(new Response<object>
+                {
+                    IsSuccess = true,
+                    Message = "Información de la propiedad.",
+                    Result = propertyReponse
+                });
+            }
+            catch (Exception ex)
+            {
+                return Ok(new Response<object>
+                {
+                    IsSuccess = false,
+                    Message = "Se ha producido un error al cargar la información de la propiedad." + ex.Message
+                });
+            }
+        }
+
         [HttpPost]
         [Route("AddPropertyWeb")]
         public async Task<IActionResult> AddProperty(AddPropertyRequest request)
@@ -693,6 +757,7 @@ namespace MyLeasing.Web.Controllers.API
 
                 var property = new Property
                 {
+                    Id = request.Id,
                     Address = request.Address,
                     HasParkingLot = request.HasParkingLot,
                     IsAvailable = request.IsAvailable,
@@ -765,12 +830,26 @@ namespace MyLeasing.Web.Controllers.API
                     Remarks = property.Remarks,
                     Latitude = property.Latitude,
                     Longitude = property.Longitude,
+                    Owner = property.Owner != null ? new OwnerResponseApi()
+                    {
+                        Id = property.Owner.Id,
+                        User = property.Owner.User != null ? new UserResponseApi()
+                        {
+                            Address = property.Owner.User.Address,
+                            Document = property.Owner.User.Document,
+                            FirstName = property.Owner.User.FirstName,
+                            LastName = property.Owner.User.LastName,
+                            Phone = property.Owner.User.PhoneNumber,
+                            Email = property.Owner.User.Email
+                        } : new UserResponseApi()
+                    } : new OwnerResponseApi(),
                     PropertyType = property.PropertyType != null ? new PropertyTypeResponseApi()
                     {
                         Id = property.PropertyType.Id,
                         Name = property.PropertyType.Name
                     } : new PropertyTypeResponseApi(),
                     PropertyImages = property.PropertyImages != null ? toPropertyImageResponseApi(property.PropertyImages) : new List<PropertyImageResponseApi>(),
+                    Contracts = property.Contracts != null ? toContactsResponseApi(property.Contracts) : new List<ContractResponseApi>()
                 };
 
                 return Ok(new Response<object>
@@ -842,7 +921,7 @@ namespace MyLeasing.Web.Controllers.API
 
         [HttpPost]
         [Route("AddImageWeb")]
-        public async Task<IActionResult> AddImage(ImageRequest request)
+        public async Task<IActionResult> AddImage([FromForm] ImageRequestApi request)
         {
             try
             {
@@ -865,25 +944,16 @@ namespace MyLeasing.Web.Controllers.API
                     });
                 }
 
-                var imageUrl = string.Empty;
-                if (request.ImageArray != null && request.ImageArray.Length > 0)
-                {
-                    var stream = new MemoryStream(request.ImageArray);
-                    var guid = Guid.NewGuid().ToString();
-                    var file = $"{guid}.jpg";
-                    var folder = "wwwroot\\images\\Properties";
-                    var fullPath = $"~/images/Properties/{file}";
-                    var response = FilesHelper.UploadPhoto(stream, folder, file);
+                var path = string.Empty;
 
-                    if (response)
-                    {
-                        imageUrl = fullPath;
-                    }
+                if (request.ImageFile != null)
+                {
+                    path = await _imageHelper.UploadImageAsync(request.ImageFile);
                 }
 
                 var propertyImage = new PropertyImage
                 {
-                    ImageUrl = imageUrl,
+                    ImageUrl = path,
                     Property = property
                 };
 
@@ -907,13 +977,13 @@ namespace MyLeasing.Web.Controllers.API
         }
 
         [HttpGet]
-        [Route("DeleteImageWeb/{propertyId}")]
-        public async Task<IActionResult> DeleteImage(int propertyId)
+        [Route("DeleteImageWeb/{imageId}")]
+        public async Task<IActionResult> DeleteImage(int imageId)
         {
             try
             {
                 var propertyImage = await _dataContext.PropertyImages
-                    .FirstOrDefaultAsync(pi => pi.Id == propertyId);
+                    .FirstOrDefaultAsync(pi => pi.Id == imageId);
 
                 if (propertyImage == null)
                 {
@@ -968,7 +1038,7 @@ namespace MyLeasing.Web.Controllers.API
                     });
                 }
 
-                var property = await _dataContext.Properties.FindAsync(request.PropertyTypeId);
+                var property = await _dataContext.Properties.FindAsync(request.PropertyId);
                 if (property == null)
                 {
                     return Ok(new Response<object>
@@ -997,8 +1067,7 @@ namespace MyLeasing.Web.Controllers.API
                     Remarks = request.Remarks,
                     StartDate = request.StartDate,
                     EndDate = request.EndDate,
-                    IsActive = request.IsActive,
-
+                    IsActive = request.IsActive
                 };
 
                 _dataContext.Contracts.Add(contrat);
@@ -1044,7 +1113,7 @@ namespace MyLeasing.Web.Controllers.API
                     });
                 }
 
-                var property = await _dataContext.Properties.FindAsync(request.PropertyTypeId);
+                var property = await _dataContext.Properties.FindAsync(request.PropertyId);
                 if (property == null)
                 {
                     return Ok(new Response<object>
@@ -1066,6 +1135,7 @@ namespace MyLeasing.Web.Controllers.API
 
                 var contrat = new Contract
                 {
+                    Id = request.Id,
                     Owner = owner,
                     Price = request.Price,
                     Property = property,
@@ -1205,6 +1275,97 @@ namespace MyLeasing.Web.Controllers.API
         }
 
         [HttpGet]
+        [Route("GetContractWeb/{contractId}")]
+        public async Task<IActionResult> GetContract(int contractId)
+        {
+            try
+            {
+                var contract = await _dataContext.Contracts
+                    .Include(p => p.Owner)
+                    .Include(p => p.Lessee)
+                    .Include(p => p.Property)
+                    .ThenInclude(pt => pt.PropertyType)
+                    .FirstOrDefaultAsync(p => p.Id == contractId);
+
+                if (contract == null)
+                {
+                    return Ok(new Response<object>
+                    {
+                        IsSuccess = false,
+                        Message = "Se ha producido un error al cargar la información del contrato."
+                    });
+                }
+
+                var contractResponse = new ContractResponseApi()
+                {
+                    Id = contract.Id,
+                    EndDate = contract.EndDate,
+                    IsActive = contract.IsActive,
+                    StartDate = contract.StartDate,
+                    Remarks = contract.Remarks,
+                    Price = contract.Price,
+                    Property = contract.Property != null ? new PropertyResponseApi()
+                    {
+                        Id = contract.Property.Id,
+                        Neighborhood = contract.Property.Neighborhood,
+                        Address = contract.Property.Address,
+                        Price = contract.Property.Price,
+                        SquareMeters = contract.Property.SquareMeters,
+                        Rooms = contract.Property.Rooms,
+                        Stratum = contract.Property.Stratum,
+                        HasParkingLot = contract.Property.HasParkingLot,
+                        IsAvailable = contract.Property.IsAvailable,
+                        Remarks = contract.Property.Remarks,
+                        Latitude = contract.Property.Latitude,
+                        Longitude = contract.Property.Longitude,
+                        PropertyType = contract.Property.PropertyType != null ? new PropertyTypeResponseApi()
+                        {
+                            Id = contract.Property.PropertyType.Id,
+                            Name = contract.Property.PropertyType.Name
+                        } : new PropertyTypeResponseApi()
+                    } : new PropertyResponseApi(),
+                    Owner = contract.Owner != null ? new OwnerResponseApi()
+                    {
+                        Id = contract.Owner.Id,
+                        User = contract.Owner.User != null ? new UserResponseApi()
+                        {
+                            Document = contract.Owner.User.Document,
+                            Address = contract.Owner.User.Address,
+                            FirstName = contract.Owner.User.FirstName,
+                            LastName = contract.Owner.User.LastName
+                        } : new UserResponseApi()
+                    } : new OwnerResponseApi(),
+                    Lessee = contract.Lessee != null ? new LesseeResponseApi()
+                    {
+                        Id = contract.Lessee.Id,
+                        User = contract.Lessee.User != null ? new UserResponseApi()
+                        {
+                            Document = contract.Lessee.User.Document,
+                            Address = contract.Lessee.User.Address,
+                            FirstName = contract.Lessee.User.FirstName,
+                            LastName = contract.Lessee.User.LastName
+                        } : new UserResponseApi()
+                    } : new LesseeResponseApi()
+                };
+
+                return Ok(new Response<object>
+                {
+                    IsSuccess = true,
+                    Message = "Información del contrato.",
+                    Result = contractResponse
+                });
+            }
+            catch (Exception ex)
+            {
+                return Ok(new Response<object>
+                {
+                    IsSuccess = false,
+                    Message = "Se ha producido un error al cargar la información del contrato." + ex.Message
+                });
+            }
+        }
+
+        [HttpGet]
         [Route("DeleteContracWeb/{contractId}")]
         public async Task<IActionResult> DeleteContrac(int contractId)
         {
@@ -1228,7 +1389,7 @@ namespace MyLeasing.Web.Controllers.API
 
                 return Ok(new Response<object>
                 {
-                    IsSuccess = false,
+                    IsSuccess = true,
                     Message = "Se elimino el contrato correctamente.",
                 });
             }

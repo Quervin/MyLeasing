@@ -115,7 +115,9 @@ namespace MyLeasing.Web.Controllers.API
                         Address = lessee.User.Address,
                         Document = lessee.User.Document,
                         FirstName = lessee.User.FirstName,
-                        LastName = lessee.User.LastName
+                        LastName = lessee.User.LastName,
+                        Phone = lessee.User.PhoneNumber,
+                        Email = lessee.User.Email
                     }
                 };
 
@@ -164,7 +166,9 @@ namespace MyLeasing.Web.Controllers.API
                         Address = lessee.User.Address,
                         Document = lessee.User.Document,
                         FirstName = lessee.User.FirstName,
-                        LastName = lessee.User.LastName
+                        LastName = lessee.User.LastName,
+                        Phone = lessee.User.PhoneNumber,
+                        Email = lessee.User.Email
                     },
                     Contracts = lessee.Contracts != null ? toContactsResponseApi(lessee.Contracts) : new List<ContractResponseApi>()
                 };
@@ -437,6 +441,140 @@ namespace MyLeasing.Web.Controllers.API
         }
 
         [HttpGet]
+        [Route("GetContractWeb/{contractId}")]
+        public async Task<IActionResult> GetContract(int contractId)
+        {
+            try
+            {
+                var contract = await _dataContext.Contracts
+                    .Include(p => p.Owner)
+                    .Include(p => p.Lessee)
+                    .Include(p => p.Property)
+                    .ThenInclude(pt=> pt.PropertyType)
+                    .FirstOrDefaultAsync(p => p.Id == contractId);
+
+                if (contract == null)
+                {
+                    return Ok(new Response<object>
+                    {
+                        IsSuccess = false,
+                        Message = "Se ha producido un error al cargar la información del contrato."
+                    });
+                }
+
+                var contractResponse = new ContractResponseApi()
+                {
+                    Id = contract.Id,
+                    EndDate = contract.EndDate,
+                    IsActive = contract.IsActive,
+                    StartDate = contract.StartDate,
+                    Remarks = contract.Remarks,
+                    Price = contract.Price,
+                    Property = contract.Property != null ? new PropertyResponseApi()
+                    {
+                        Id = contract.Property.Id,
+                        Neighborhood = contract.Property.Neighborhood,
+                        Address = contract.Property.Address,
+                        Price = contract.Property.Price,
+                        SquareMeters = contract.Property.SquareMeters,
+                        Rooms = contract.Property.Rooms,
+                        Stratum = contract.Property.Stratum,
+                        HasParkingLot = contract.Property.HasParkingLot,
+                        IsAvailable = contract.Property.IsAvailable,
+                        Remarks = contract.Property.Remarks,
+                        Latitude = contract.Property.Latitude,
+                        Longitude = contract.Property.Longitude,
+                        PropertyType = contract.Property.PropertyType != null ? new PropertyTypeResponseApi()
+                        {
+                            Id = contract.Property.PropertyType.Id,
+                            Name = contract.Property.PropertyType.Name
+                        } : new PropertyTypeResponseApi()
+                    } : new PropertyResponseApi(),
+                    Owner = contract.Owner != null ? new OwnerResponseApi()
+                    {
+                        Id = contract.Owner.Id,
+                        User = contract.Owner.User != null ? new UserResponseApi()
+                        {
+                            Document = contract.Owner.User.Document,
+                            Address = contract.Owner.User.Address,
+                            FirstName = contract.Owner.User.FirstName,
+                            LastName = contract.Owner.User.LastName
+                        } : new UserResponseApi()
+                    } : new OwnerResponseApi(),
+                    Lessee = contract.Lessee != null ? new LesseeResponseApi()
+                    {
+                        Id = contract.Lessee.Id,
+                        User = contract.Lessee.User != null ? new UserResponseApi()
+                        {
+                            Document = contract.Lessee.User.Document,
+                            Address = contract.Lessee.User.Address,
+                            FirstName = contract.Lessee.User.FirstName,
+                            LastName = contract.Lessee.User.LastName
+                        } : new UserResponseApi()
+                    } : new LesseeResponseApi()
+                };
+
+                return Ok(new Response<object>
+                {
+                    IsSuccess = true,
+                    Message = "Información del contrato.",
+                    Result = contractResponse
+                });
+            }
+            catch (Exception ex)
+            {
+                return Ok(new Response<object>
+                {
+                    IsSuccess = false,
+                    Message = "Se ha producido un error al cargar la información del contrato." + ex.Message
+                });
+            }
+        }
+
+        [HttpGet]
+        [Route("GetLesseesWeb")]
+        public async Task<IActionResult> GetListLessees()
+        {
+            try
+            {
+                var lessee = await _dataContext.Lessees
+               .Include(l => l.User)
+               .OrderBy(pt => pt.User.FullNameWithDocument)
+               .ToListAsync();
+
+                var lesseeResponse = lessee.Select( x=> new LesseeResponseApi()
+                {
+                    Id = x.Id,
+                    User = new UserResponseApi()
+                    {
+                        Address = x.User.Address,
+                        Document = x.User.Document,
+                        FirstName = x.User.FirstName,
+                        LastName = x.User.LastName,
+                        Phone = x.User.PhoneNumber,
+                        Email = x.User.Email
+                    }
+                }).ToList();
+
+                return Ok(new Response<object>
+                {
+                    IsSuccess = true,
+                    Message = "Lista de lessees.",
+                    Result = lesseeResponse
+                });
+            }
+            catch (Exception ex)
+            {
+                return Ok(new Response<object>
+                {
+                    IsSuccess = false,
+                    Message = "Se ha producido un error al cargar la lista de lessees." + ex.Message
+                });
+            }
+        }
+
+
+        [HttpGet]
         [Route("DeleteContractWeb/{contractId}")]
         public async Task<IActionResult> DeleteContract(int contractId)
         {
@@ -498,7 +636,7 @@ namespace MyLeasing.Web.Controllers.API
                     });
                 }
 
-                var property = await _dataContext.Properties.FindAsync(request.PropertyTypeId);
+                var property = await _dataContext.Properties.FindAsync(request.PropertyId);
                 if (property == null)
                 {
                     return Ok(new Response<object>
@@ -520,6 +658,7 @@ namespace MyLeasing.Web.Controllers.API
 
                 var contrat = new Contract
                 {
+                    Id = request.Id,
                     Owner = owner,
                     Price = request.Price,
                     Property = property,

@@ -107,7 +107,9 @@ namespace MyLeasing.Web.Controllers.API
                         Address = manager.User.Address,
                         Document = manager.User.Document,
                         FirstName = manager.User.FirstName,
-                        LastName = manager.User.LastName
+                        LastName = manager.User.LastName,
+                        Phone = manager.User.PhoneNumber,
+                        Email = manager.User.Email
                     }
                 };
 
@@ -155,7 +157,9 @@ namespace MyLeasing.Web.Controllers.API
                         Address = manager.User.Address,
                         Document = manager.User.Document,
                         FirstName = manager.User.FirstName,
-                        LastName = manager.User.LastName
+                        LastName = manager.User.LastName,
+                        Phone = manager.User.PhoneNumber,
+                        Email = manager.User.Email
                     }
                 };
 

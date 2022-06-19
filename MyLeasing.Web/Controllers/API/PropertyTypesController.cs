@@ -72,6 +72,38 @@ namespace MyLeasing.Web.Controllers.API
         }
 
         [HttpGet]
+        [Route("GetPropertiesTypeWeb")]
+        public async Task<IActionResult> GetListPropertiesType()
+        {
+            try
+            {
+                var propertyTypes = await _dataContext.PropertyTypes
+                    .ToListAsync();
+
+                var propertyTypesList = propertyTypes.Select(x => new PropertyTypeResponseApi()
+                {
+                    Id = x.Id,
+                    Name = x.Name
+                }).ToList();
+
+                return Ok(new Response<object>
+                {
+                    IsSuccess = true,
+                    Message = "Listado de los tipo de propiedades.",
+                    Result = propertyTypesList,
+                });
+            }
+            catch (Exception ex)
+            {
+                return Ok(new Response<object>
+                {
+                    IsSuccess = false,
+                    Message = "Se ha producido un error al intentar obtener el listado de los tipos de propiedades." + ex.Message
+                });
+            }
+        }
+
+        [HttpGet]
         [Route("GetPropertyTypeWeb/{propertyTypeId}")]
         public async Task<IActionResult> GetPropertyType(int propertyTypeId)
         {

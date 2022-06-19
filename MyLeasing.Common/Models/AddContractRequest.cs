@@ -25,7 +25,7 @@ namespace MyLeasing.Common.Models
         public bool IsActive { get; set; }
 
         [Required]
-        public int PropertyTypeId { get; set; }
+        public int PropertyId { get; set; }
 
         [Required]
         public int LesseeId { get; set; }
